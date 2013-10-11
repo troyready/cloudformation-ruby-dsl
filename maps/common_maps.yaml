@@ -1,0 +1,131 @@
+---
+Mappings:
+  UniverseMap:
+    ci:
+      VPC: dev
+    dev:
+      VPC: dev
+    qa:
+      VPC: qa
+    cert:
+      VPC: qa
+    uat:
+      VPC: prod
+    bazaar:
+      VPC: prod
+  UniverseSecurityGroupsMap:
+    us-east-1:
+      ci:
+      - sg-95817dfa
+      dev:
+      - sg-7555b91a
+      cert:
+      - sg-bd7b95d2
+      uat:
+      - todo
+      bazaar:
+      - sg-7655b919
+    us-west-2:
+      ci:
+      - todo
+      dev:
+      - todo
+      cert:
+      - todo
+      uat:
+      - todo
+      bazaar:
+      - todo
+    eu-west-1:
+      ci:
+      - sg-e0a0b98c
+      dev:
+      - sg-e7a0b98b
+      cert:
+      - sg-8b170fe7
+      uat:
+      - todo
+      bazaar:
+      - sg-e2a0b98e
+  RegionMap:
+    us-east-1:
+      AMI: ami-e8249881
+      SNSNotificationARN: arn:aws:sns:us-east-1:774013277495:all-emodb-notifications-EmailSNSTopic-1B59XRP6KQIGD
+    us-west-2:
+      AMI: ami-2e31bf1e
+      SNSNotificationARN: arn:aws:sns:us-west-2:774013277495:all-emodb-notifications-EmailSNSTopic-XKB6PGTFG9KO
+    eu-west-1:
+      AMI: ami-b57474c1
+      SNSNotificationARN: arn:aws:sns:eu-west-1:774013277495:all-emodb-notifications-EmailSNSTopic-800CT3M0QTST
+  dev:
+    us-east-1:
+      a:
+      - subnet-861bd9ed
+      b:
+      - subnet-9518dafe
+      c:
+      - subnet-5c9ee531
+    eu-west-1:
+      a:
+      - subnet-baa84bd2
+      b:
+      - subnet-b5a84bdd
+      c:
+      - subnet-99a84bf1
+  qa:
+    us-east-1:
+      a:
+      - subnet-44a51b2f
+      b:
+      - subnet-3fa51b54
+      c:
+      - subnet-c9a51ba2
+    us-west-2:
+      a:
+      - subnet-2603864f
+      b:
+      - subnet-3a038653
+      c:
+      - subnet-3f038656
+    eu-west-1:
+      a:
+      - subnet-cdbb58a5
+      b:
+      - subnet-acbb58c4
+      c:
+      - subnet-b9bb58d1
+  prod:
+    us-east-1:
+      a:
+      - subnet-3462dd5f
+      b:
+      - subnet-1a62dd71
+      c:
+      - subnet-ef62dd84
+    us-west-2:
+      a:
+      - subnet-1ac14173
+      b:
+      - subnet-12c1417b
+      c:
+      - subnet-eec14187
+    eu-west-1:
+      a:
+      - subnet-0d668b65
+      b:
+      - subnet-19668b71
+      c:
+      - subnet-1e668b76
+  VpcIds:
+    us-east-1:
+      dev: vpc-8e1bd9e5
+      qa: vpc-fca41a97
+      prod: vpc-9163dcfa
+    us-west-2:
+      dev: ''
+      qa: vpc-4503862c
+      prod: vpc-5bc14132
+    eu-west-1:
+      dev: vpc-eca84b84
+      qa: vpc-74bb581c
+      prod: vpc-26668b4e
