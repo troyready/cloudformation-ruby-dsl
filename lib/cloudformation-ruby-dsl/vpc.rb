@@ -49,12 +49,6 @@ region          vpc     vpc_id          vpc_cidr         vpc_visibility  zone   
 
   def self.office_cidrs()
     [
-        "24.155.144.0/27",    # Bazaarvoice Austin office
-        "217.68.253.189/32",  # Bazaarvoice London office
-        "64.132.218.184/29",  # Bazaarvoice NY office
-        "123.51.122.8/30",    # Bazaarvoice Australia Office
-        "206.80.5.2/32",      # Bazaarvoice San Francisco Office
-        "216.166.20.0/26",    # Bazaarvoice / Data Foundry (Office 1-29, Lab 30-62)
     ]
   end
 
