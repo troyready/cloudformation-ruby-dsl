@@ -5,7 +5,7 @@ require 'cloudformation-ruby-dsl/version'
 
 Gem::Specification.new do |gem|
   gem.name          = "cloudformation-ruby-dsl"
-  gem.version       = Cloudformation::Ruby::Dsl::VERSION
+  gem.version       = Cfn::Ruby::Dsl::VERSION
   gem.authors       = ["Dave Barcelo"]
   gem.email         = ["Dave.Barcelo@bazaarvoice.com"]
   gem.description   = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.}
