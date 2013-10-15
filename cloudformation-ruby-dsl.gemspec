@@ -6,8 +6,8 @@ require 'cloudformation-ruby-dsl/version'
 Gem::Specification.new do |gem|
   gem.name          = "cloudformation-ruby-dsl"
   gem.version       = Cfn::Ruby::Dsl::VERSION
-  gem.authors       = ["Dave Barcelo"]
-  gem.email         = ["Dave.Barcelo@bazaarvoice.com"]
+  gem.authors       = ["Shawn Smith", "Dave Barcelo", "Nathaniel Eliot"]
+  gem.email         = ["Shawn.Smith@bazaarvoice.com", "Dave.Barcelo@bazaarvoice.com", "Nathaniel.Eliot@bazaarvoice.com"]
   gem.description   = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.}
   gem.summary       = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.  Written by [Bazaarvoice](http://www.bazaarvoice.com).}
   gem.homepage      = ""
