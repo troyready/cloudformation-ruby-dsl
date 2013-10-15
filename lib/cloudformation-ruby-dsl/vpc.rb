@@ -2,13 +2,12 @@ module Vpc
 
   class << self; attr_accessor :raw_metadata_table, :VPC_RECORDS; end
 
-  @raw_metadata_table = '
-region          vpc     vpc_id          vpc_cidr         vpc_visibility  zone          zone_suffix  subnet_id        subnet_cidr   
-
-'
-  raw_header, *raw_data = raw_metadata_table.strip.split("\n").map { |row| row.strip.split(' ') }
-  raw_header = raw_header.map { |s| s.to_sym }
-  @VPC_RECORDS = raw_data.map { |row| Hash[raw_header.zip(row)] }
+  def self.load_metadata_table(raw_table=nil)
+    raw_table ||= 'region vpc vpc_id vpc_cidr vpc_visibility zone zone_suffix subnet_id subnet_cidr'
+    raw_header, *raw_data = raw_table.strip.split("\n").map { |row| row.strip.split(' ') }
+    raw_header = raw_header.map { |s| s.to_sym }
+    @VPC_RECORDS = raw_data.map { |row| Hash[raw_header.zip(row)] }
+  end
 
   def self.lookup(key, predicate)
     distinct_values(filter(@VPC_RECORDS, predicate), key, false)
