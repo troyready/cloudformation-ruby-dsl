@@ -220,11 +220,22 @@ class TemplateDSL < JsonObjectDSL
   def resource(name, options) default(:Resources, {})[name] = options end
 
   def output(name, options) default(:Outputs, {})[name] = options end
+
+  def find_in_map(map, key1, key2)
+    # Eagerly evaluate mappings when all keys are known at template expansion time
+    if map.is_a?(String) && key1.is_a?(String) && key2.is_a?(String)
+      # We don't know whether the map was built with string keys or symbol keys.  Try both.
+      def get(map, key) map[key] || map.fetch(key.to_sym) end
+      get(get(@dict.fetch(:Mappings).fetch(map), key1), key2)
+    else
+      { :'Fn::FindInMap' => [ map, key1, key2 ] }
+    end
+  end
 end
 
 def base64(value) { :'Fn::Base64' => value } end
 
-def find_in_map(map, key, value) { :'Fn::FindInMap' => [ map, key, value ] } end
+def find_in_map(map, key, value) { :'Fn::FindInMap' => [ map, key1, key2 ] } end
 
 def get_att(resource, attribute) { :'Fn::GetAtt' => [ resource, attribute ] } end
 
