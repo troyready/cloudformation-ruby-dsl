@@ -2,7 +2,9 @@
 require 'bundler/setup'
 require 'cloudformation-ruby-dsl/cfntemplate'
 require 'cloudformation-ruby-dsl/spotprice'
-require 'cloudformation-ruby-dsl/vpc'
+require 'cloudformation-ruby-dsl/table'
+
+vpc = Table.load 'vpc.txt'
 
 template do
 
@@ -119,7 +121,7 @@ template do
 
   # Uses the module code in ./lib/vpc.rb to dynamically lookup the info needed.
   mapping 'VPCPrivateSubnetsByZoneMap',
-          Vpc.metadata_multimap({ :region => aws_region, :vpc_visibility => 'private' }, :vpc, :zone_suffix, :subnet_id)
+          vpc.get_multimap({ :region => aws_region, :vpc_visibility => 'private' }, :vpc, :zone_suffix, :subnet_id)
 
   resource 'PolloiCassandraSecurityGroup', :Type => 'AWS::EC2::SecurityGroup', :Properties => {
       :GroupDescription => 'Lets any vpc traffic in.',

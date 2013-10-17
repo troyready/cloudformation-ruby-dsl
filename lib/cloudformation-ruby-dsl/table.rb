@@ -1,6 +1,36 @@
+require 'detabulator'
+
+# def self.lookup(key, predicate)
+#   @@table.get(key, predicate)
+# end
+#
+# def self.lookup_list(key, predicate)
+#   @@table.get_list(key, predicate)
+# end
+#
+# def self.metadata_map(predicate, *keys)
+#   @@table.get_map(predicate, *keys)
+# end
+#
+# def self.metadata_multimap(predicate, *keys)
+#   @@table.get_multimap(predicate, *keys)
+# end
+#
+# def self.load_metadata_table(table_def = nil)
+#   table_def ||= 'region vpc vpc_id vpc_cidr vpc_visibility zone zone_suffix subnet_id subnet_cidr'
+#   @@table = Table.new table_def
+# end
+#
+# load_metadata_table
+
+
 class Table
+  def self.load(filename)
+    self.new File.read filename
+  end
+
   def initialize(table_as_text)
-    raw_header, *raw_data = table_as_text.strip.split("\n").map { |row| row.strip.split(' ') }
+    raw_header, *raw_data = Detabulator.new.detabulate table_as_text
     raw_header = raw_header.map { |s| s.to_sym }
     @records = raw_data.map { |row| Hash[raw_header.zip(row)] }
   end
