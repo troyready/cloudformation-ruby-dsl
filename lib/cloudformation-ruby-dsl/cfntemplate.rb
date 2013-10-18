@@ -10,6 +10,17 @@ require 'csv'
 require 'json'
 require 'yaml'
 require 'erb'
+require 'pathname'
+
+class Pathname
+  # Walk up the directory tree from the current path, until you reach root
+  def parents()
+    paths = []
+    cur = self.realpath
+    begin paths << cur; cur = cur.parent end until cur.root?
+    paths
+  end
+end
 
 ############################# Command-line and "cfn-cmd" Support
 
@@ -38,6 +49,13 @@ def cfn_cmd(template)
     exit(2)
   end
 
+  # Search for an aws-credential file in this directory or parents, if credentials haven't been passed
+  if (ARGV & %w{--access-key-id -S --secret-key -K  --aws-credential-file}).empty?
+    credentials = Pathname.new('.').parents.map {|p| "#{p}/.aws/config" }.detect {|f| File.exist? f }
+    raise "No credentials" unless credentials
+    ARGV.concat ['--aws-credential-file', credentials ]
+  end
+
   template_string = JSON.pretty_generate(template)
   if ARGV[0] == 'expand'
     # Write the pretty-printed JSON template to stdout.
@@ -48,7 +66,7 @@ def cfn_cmd(template)
     # example: <template.rb> diff my-stack-name --parameters "Universe=cert" --region eu-west-1
     # Diff the current template for an existing stack with the expansion of this template.
     cfn_options, diff_options = extract_options(ARGV[1..-1], %w(),
-      %w(--stack-name --region --parameters --connection-timeout --delimiter -I --access-key-id -S --secret-key -K --ec2-private-key-file-path -U --url))
+      %w(--stack-name --region --parameters --connection-timeout --delimiter -I --access-key-id -S --secret-key -K --ec2-private-key-file-path -U --url --aws-credential-file))
     # If the first argument is a stack name then shift it from diff_options over to cfn_options.
     if diff_options[0] && !(/^-/ =~ diff_options[0])
       cfn_options.unshift(diff_options.shift)
