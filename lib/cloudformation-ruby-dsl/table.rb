@@ -1,28 +1,18 @@
+# Copyright 2013-2014 Bazaarvoice, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 require 'detabulator'
-
-# def self.lookup(key, predicate)
-#   @@table.get(key, predicate)
-# end
-#
-# def self.lookup_list(key, predicate)
-#   @@table.get_list(key, predicate)
-# end
-#
-# def self.metadata_map(predicate, *keys)
-#   @@table.get_map(predicate, *keys)
-# end
-#
-# def self.metadata_multimap(predicate, *keys)
-#   @@table.get_multimap(predicate, *keys)
-# end
-#
-# def self.load_metadata_table(table_def = nil)
-#   table_def ||= 'region vpc vpc_id vpc_cidr vpc_visibility zone zone_suffix subnet_id subnet_cidr'
-#   @@table = Table.new table_def
-# end
-#
-# load_metadata_table
-
 
 class Table
   def self.load(filename)
