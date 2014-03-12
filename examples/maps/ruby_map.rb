@@ -1,0 +1,5 @@
+{
+  'Mappings' => {
+    'blah' => { 'baz' => 'blah' }
+  }
+}
