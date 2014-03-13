@@ -67,7 +67,8 @@ def cfn_cmd(template)
 
   # example: <template.rb> cfn-create-stack my-stack-name --parameters "Env=prod" --region eu-west-1
   # Execute the AWS CLI cfn-cmd command to validate/create/update a CloudFormation stack.
-  temp_file = write_temp_file($PROGRAM_NAME, 'expanded.json', template_string)
+  temp_file = File.absolute_path("#{$PROGRAM_NAME}.expanded.json")
+  File.write(temp_file, template_string)
 
   cmdline = ['cfn-cmd'] + ARGV + ['--template-file', temp_file] + cfn_tags_options
 
@@ -107,8 +108,10 @@ def cfn_cmd(template)
     parameters_string     = template.parameters.sort.map { |key, value| "PARAMETER \"#{key}=#{value}\"\n" }.join
 
     # Diff the expanded template with the template from CloudFormation.
-    old_temp_file = write_temp_file($PROGRAM_NAME, 'current.json', old_parameters_string + old_template_string)
-    new_temp_file = write_temp_file($PROGRAM_NAME, 'expanded.json', parameters_string + %Q(TEMPLATE  "#{template_string}\n"\n))
+    old_temp_file = File.absolute_path("#{$PROGRAM_NAME}.current.json")
+    File.write(old_temp_file, old_parameters_string + old_template_string)
+    new_temp_file = File.absolute_path("#{$PROGRAM_NAME}.expanded.json")
+    File.write(new_temp_file, parameters_string + %Q(TEMPLATE  "#{template_string}\n"\n))
 
     # Compare CloudFormation tags
     unless cfn_tags == old_stack_cfn_tags
@@ -197,12 +200,6 @@ def exec_capture_stdout command
   stdout
 end
 
-def write_temp_file(name, suffix, content)
-  path = File.absolute_path("#{name}.#{suffix}")
-  File.open(path, 'w') { |file| file.write content }
-  path
-end
-
 def extract_options(args, opts_no_val, opts_1_val)
   args = args.clone
   opts = []
@@ -236,35 +233,16 @@ class JsonObjectDSL
     @dict[key] ||= value
   end
 
-  def compact!()
-    remove_nil(@dict)
-  end
-
   def to_json(*args)
-    compact!
+#     compact!
     @dict.to_json(*args)
   end
 
   def print()
     puts JSON.pretty_generate(self)
   end
-
-  # In general, eliminate nil values.  If you really need it, create a wrapper class like "class JsonNullDSL; def to_json(*args) nil.to_json(*args) end end"
-  def remove_nil(input)
-    case input
-      when Array
-        input.compact!
-        input.each { |value| remove_nil(value) }
-      when Hash
-        input.delete_if { |key, value| key.nil? || value.nil? }
-        input.values.each { |value| remove_nil(value) }
-      when JsonObjectDSL
-        input.compact!
-      else
-    end
-  end
-
 end
+
 ############################# CloudFormation DSL
 
 # Main entry point
@@ -367,11 +345,8 @@ def get_att(resource, attribute) { :'Fn::GetAtt' => [ resource, attribute ] } en
 def get_azs(region = '') { :'Fn::GetAZs' => region } end
 
 def join(delim, *list)
-  case list.length
-    when 0 then ''
-    when 1 then list[0]
-    else {:'Fn::Join' => [ delim, list ] }
-  end
+  return list[0] unless list.length > 1
+  {:'Fn::Join' => [ delim, list ] }
 end
 
 # Variant of join that matches the native CFN syntax.
@@ -384,10 +359,9 @@ def ref(name) { :Ref => name } end
 # Read the specified file and return its value as a string literal
 def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_NAME))) end
 
-# Interpolates a string like "NAME={{join('-', ref('Env'), ref('Service'))}}" and returns a
-# CloudFormation "Fn::Join" operation using the specified delimiter.  Anything between {{
-# and }} is interpreted as a Ruby expression and eval'd.  This is especially useful with
-# Ruby "here" documents.
+# Interpolates a string like "NAME={{ref('Service')}}" and returns a CloudFormation "Fn::Join"
+# operation to collect the results.  Anything between {{ and }} is interpreted as a Ruby expression
+# and eval'd.  This is especially useful with Ruby "here" documents.
 def interpolate(string)
   list = []
   while string.length > 0
@@ -396,16 +370,13 @@ def interpolate(string)
     list << eval(match[2..-3]) if match.length > 0
   end
 
-  join('', *_flat_map_newlines(list))
-end
-
-# Split out strings in an array by newline, for visibility
-def _flat_map_newlines(list)
-  list.flat_map {|value| value.is_a?(String) ? value.lines.reject { |line| line.empty? } : value }
+  # Split out strings in an array by newline, for visibility
+  list = list.flat_map {|value| value.is_a?(String) ? value.lines.to_a : value }
+  join('', *list)
 end
 
 def join_interpolate(delim, string)
-  $stderr.puts "join_interpolate(#{delim},#{string}) has been deprecated; use interpolate(#{string}) instead"
+  $stderr.puts "join_interpolate(delim,string) has been deprecated; use interpolate(string) instead"
   interpolate(string)
 end
 
