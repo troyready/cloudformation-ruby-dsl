@@ -388,39 +388,25 @@ def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_
 # CloudFormation "Fn::Join" operation using the specified delimiter.  Anything between {{
 # and }} is interpreted as a Ruby expression and eval'd.  This is especially useful with
 # Ruby "here" documents.
-def join_interpolate(delim, string, overrides={}.freeze)
+def interpolate(string)
   list = []
   while string.length > 0
-    head, match, tail = string.partition(/\{\{.*?\}\}/)
+    head, match, string = string.partition(/\{\{.*?\}\}/)
     list << head if head.length > 0
-    if match.length > 0
-      match_expr = match[2..-3]
-      if matched = overrides[match_expr]
-        list << matched
-      else
-        list << eval(match_expr)
-      end
-    end
-    string = tail
+    list << eval(match[2..-3]) if match.length > 0
   end
 
-  # If 'delim' is specified, return a two-level set of joins: a top-level join() with the
-  # specified delimiter and nested join()s on the empty string as necessary.
-  if delim != ''
-    # If delim=="\n", split "abc\ndef\nghi" into ["abc", "\n", "def", "\n", "ghi"] so the newline
-    # characters are by themselves.  Then join() the values in each chunk between newlines.
-    list = list.flat_map do |value|
-      if value.is_a?(String)
-        value.split(Regexp.new("(#{Regexp.escape(delim)})")).reject { |substring| substring.empty? }
-      else
-        [ value ]
-      end
-    end.chunk { |value| value == delim }.map do |k, a|
-      join('', *a) unless k
-    end.compact
-  end
+  join('', *_flat_map_newlines(list))
+end
 
-  join(delim, *list)
+# Split out strings in an array by newline, for visibility
+def _flat_map_newlines(list)
+  list.flat_map {|value| value.is_a?(String) ? value.lines.reject { |line| line.empty? } : value }
+end
+
+def join_interpolate(delim, string)
+  $stderr.puts "join_interpolate(#{delim},#{string}) has been deprecated; use interpolate(#{string}) instead"
+  interpolate(string)
 end
 
 # This class is used by erb templates so they can access the parameters passed
