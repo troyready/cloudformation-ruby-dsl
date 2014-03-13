@@ -28,22 +28,24 @@ require 'erb'
 ############################# Command-line and "cfn-cmd" Support
 
 # Parse command-line arguments based on cfn-cmd syntax (cfn-create-stack etc.) and return the parameters and region
-def cfn_parse_args()
+def cfn_parse_args
   parameters = {}
   region = 'us-east-1'
-  stack_name = ARGV[1] && !(/^-/ =~ ARGV[1]) ? ARGV[1] : '<stack-name>'
   ARGV.slice_before(/^--/).each do |name, value|
-    if name == '--parameters' && value
-      parameters = Hash[value.split(/;/).map { |s| s.split(/=/, 2) }]
-    elsif name == '--region' && value
+    next unless value
+    case name
+    when '--parameters'
+      parameters = Hash[value.split(/;/).map { |pair| pair.split(/=/, 2) }]
+    when '--region'
       region = value
     end
   end
-  [parameters, region, stack_name]
+  [parameters, region]
 end
 
 def cfn_cmd(template)
-  unless %w(expand diff cfn-validate-template cfn-create-stack cfn-update-stack).include?(ARGV[0])
+  action = ARGV[0]
+  unless %w(expand diff cfn-validate-template cfn-create-stack cfn-update-stack).include? action
     $stderr.puts "usage: #{$PROGRAM_NAME} <expand|diff|cfn-validate-template|cfn-create-stack|cfn-update-stack>"
     exit(2)
   end
@@ -58,9 +60,8 @@ def cfn_cmd(template)
 
   # Tag CloudFormation stacks based on :Tags defined in the template
   cfn_tags = template.excise_tags!.sort
-  # The command line string looks like:
-  #   --tag "Key=key; Value=value" --tag "Key2=key2; Value2=value"
-  cfn_tags_options = cfn_tags.map { |k| "--tag \"Key=#{k.split('=')[0]}; Value=#{k.split('=')[1]}\" " }.join('').rstrip.split(' ')
+  # The command line string looks like: --tag "Key=key; Value=value" --tag "Key2=key2; Value2=value"
+  cfn_tags_options = cfn_tags.map { |tag| ["--tag", "\"Key=%s; Value=%s\" " % tag.split('=')] }.flatten
 
   template_string = JSON.pretty_generate(template)
 
@@ -70,14 +71,14 @@ def cfn_cmd(template)
 
   cmdline = ['cfn-cmd'] + ARGV + ['--template-file', temp_file] + cfn_tags_options
 
-  if ARGV[0] == 'expand'
+  case action
+  when 'expand'
     # Write the pretty-printed JSON template to stdout.
     # example: <template.rb> expand --parameters "Env=prod" --region eu-west-1
     puts template_string
     
     exit(true)
-
-  elsif ARGV[0] == 'diff'
+  when 'diff'
     # example: <template.rb> diff my-stack-name --parameters "Env=prod" --region eu-west-1
     # Diff the current template for an existing stack with the expansion of this template.
 
@@ -102,8 +103,8 @@ def cfn_cmd(template)
     old_parameters_string        = old_stack_description_parsed[6]
 
     # Sort the parameters strings alphabetically to make them easily comparable
-    old_parameters_string = (old_parameters_string || '').split(';').sort.map { |s| %Q(PARAMETER "#{s}"\n) }.join
-    parameters_string     = template.parameters.map { |k, v| k + '=' + v.to_s }.sort.map { |s| %Q(PARAMETER "#{s}"\n) }.join
+    old_parameters_string = (old_parameters_string || '').split(';').sort.map { |param| %Q(PARAMETER "#{param}"\n) }.join
+    parameters_string     = template.parameters.sort.map { |key, value| "PARAMETER \"#{key}=#{value}\"\n" }.join
 
     # Diff the expanded template with the template from CloudFormation.
     old_temp_file = write_temp_file($PROGRAM_NAME, 'current.json', old_parameters_string + old_template_string)
@@ -126,11 +127,11 @@ def cfn_cmd(template)
 
     exit(true)
 
-  elsif ARGV[0] == 'cfn-validate-template'
+  when 'cfn-validate-template'
     # The cfn-validate-template command doesn't support --parameters so remove it if it was provided for template expansion.
     _, cmdline = extract_options(cmdline, %w(), %w(--parameters --tag))
 
-  elsif ARGV[0] == 'cfn-update-stack'
+  when 'cfn-update-stack'
     # If updating a stack and some parameters are marked as immutable, fail if the new parameters don't match the old ones.
     if not immutable_parameters.empty?
 
@@ -148,7 +149,7 @@ def cfn_cmd(template)
       old_stack_description = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --show-long")
       old_parameters_string = CSV.parse_line(old_stack_description)[6]
 
-      old_parameters = Hash[(old_parameters_string || '').split(';').map { |s| s.split('=', 2) }]
+      old_parameters = Hash[(old_parameters_string || '').split(';').map { |pair| pair.split('=', 2) }]
       new_parameters = template.parameters
 
       immutable_parameters.sort.each do |param|
@@ -198,7 +199,7 @@ end
 
 def write_temp_file(name, suffix, content)
   path = File.absolute_path("#{name}.#{suffix}")
-  File.open(path, 'w') { |f| f.write content }
+  File.open(path, 'w') { |file| file.write content }
   path
 end
 
@@ -247,35 +248,36 @@ class JsonObjectDSL
   def print()
     puts JSON.pretty_generate(self)
   end
-end
 
-# In general, eliminate nil values.  If you really need it, create a wrapper class like "class JsonNullDSL; def to_json(*args) nil.to_json(*args) end end"
-def remove_nil(val)
-  case val
-    when Array
-      val.compact!
-      val.each { |v| remove_nil(v) }
-    when Hash
-      val.delete_if { |k, v| k == nil || v == nil }
-      val.values.each { |v| remove_nil(v) }
-    when JsonObjectDSL
-      val.compact!
-    else
+  # In general, eliminate nil values.  If you really need it, create a wrapper class like "class JsonNullDSL; def to_json(*args) nil.to_json(*args) end end"
+  def remove_nil(input)
+    case input
+      when Array
+        input.compact!
+        input.each { |value| remove_nil(value) }
+      when Hash
+        input.delete_if { |key, value| key.nil? || value.nil? }
+        input.values.each { |value| remove_nil(value) }
+      when JsonObjectDSL
+        input.compact!
+      else
+    end
   end
-end
 
+end
 ############################# CloudFormation DSL
 
-# main entry point
+# Main entry point
 def template(&block)
   TemplateDSL.new(&block)
 end
 
+# Core interpreter for the DSL
 class TemplateDSL < JsonObjectDSL
-  attr_reader :parameters, :aws_region, :aws_stack_name
+  attr_reader :parameters, :aws_region
 
   def initialize()
-    @parameters, @aws_region, @aws_stack_name = cfn_parse_args
+    @parameters, @aws_region = cfn_parse_args
     super
   end
 
@@ -301,28 +303,28 @@ class TemplateDSL < JsonObjectDSL
 
   def mapping(name, options)
     # if options is a string and a valid file then the script will process the external file.
-    if options.is_a?(String)
-      raise("File #{options} is not accessible. Error!") unless File.exists?(options)
-      filename = options
-
-      # Figure out what the file extension is and process accordingly.
-      case File.extname(filename)
-        when ".rb"
-          options = eval(File.open(filename).read)['Mappings']
-        when ".json"
-          options = JSON.load(File.open(filename))['Mappings']
-        when ".yaml"
-          options = YAML::load_file(filename)['Mappings']
-        else
-          raise("Do not recognize extension of #{filename}.")
-      end
-      default(:Mappings, {})[name] = options
-
-    elsif options.is_a?(Hash)
-      default(:Mappings, {})[name] = options
-    else
-      raise("Options for mapping #{name} is neither a string or a hash.  Error!")
+    default(:Mappings, {})[name] = \
+      if options.is_a?(Hash); options
+      elsif options.is_a?(String); load_from_file(options)['Mappings']
+      else; raise("Options for mapping #{name} is neither a string or a hash.  Error!")
     end
+  end
+
+  def load_from_file(filename)
+    file = File.open(filename)
+
+    begin
+      # Figure out what the file extension is and process accordingly.
+      contents = case File.extname(filename)
+        when ".rb"; eval(file.read)
+        when ".json"; JSON.load(file)
+        when ".yaml"; YAML::load(file)
+        else; raise("Do not recognize extension of #{filename}.")
+      end
+    ensure
+      file.close
+    end
+    contents
   end
 
   def excise_tags!
@@ -344,21 +346,21 @@ class TemplateDSL < JsonObjectDSL
 
   def output(name, options) default(:Outputs, {})[name] = options end
 
-  def find_in_map(map, key1, key2)
+  def find_in_map(map, key, name)
     # Eagerly evaluate mappings when all keys are known at template expansion time
-    if map.is_a?(String) && key1.is_a?(String) && key2.is_a?(String)
+    if map.is_a?(String) && key.is_a?(String) && name.is_a?(String)
       # We don't know whether the map was built with string keys or symbol keys.  Try both.
       def get(map, key) map[key] || map.fetch(key.to_sym) end
-      get(get(@dict.fetch(:Mappings).fetch(map), key1), key2)
+      get(get(@dict.fetch(:Mappings).fetch(map), key), name)
     else
-      { :'Fn::FindInMap' => [ map, key1, key2 ] }
+      { :'Fn::FindInMap' => [ map, key, name ] }
     end
   end
 end
 
 def base64(value) { :'Fn::Base64' => value } end
 
-def find_in_map(map, key1, key2) { :'Fn::FindInMap' => [ map, key1, key2 ] } end
+def find_in_map(map, key, name) { :'Fn::FindInMap' => [ map, key, name ] } end
 
 def get_att(resource, attribute) { :'Fn::GetAtt' => [ resource, attribute ] } end
 
@@ -393,8 +395,8 @@ def join_interpolate(delim, string, overrides={}.freeze)
     list << head if head.length > 0
     if match.length > 0
       match_expr = match[2..-3]
-      if overrides[match_expr]
-        list << overrides[match_expr]
+      if matched = overrides[match_expr]
+        list << matched
       else
         list << eval(match_expr)
       end
@@ -407,13 +409,13 @@ def join_interpolate(delim, string, overrides={}.freeze)
   if delim != ''
     # If delim=="\n", split "abc\ndef\nghi" into ["abc", "\n", "def", "\n", "ghi"] so the newline
     # characters are by themselves.  Then join() the values in each chunk between newlines.
-    list = list.flat_map do |v|
-      if v.is_a?(String)
-        v.split(Regexp.new("(#{Regexp.escape(delim)})")).reject { |s| s == '' }
+    list = list.flat_map do |value|
+      if value.is_a?(String)
+        value.split(Regexp.new("(#{Regexp.escape(delim)})")).reject { |substring| substring.empty? }
       else
-        [ v ]
+        [ value ]
       end
-    end.chunk { |v| v == delim }.map do |k, a|
+    end.chunk { |value| value == delim }.map do |k, a|
       join('', *a) unless k
     end.compact
   end
@@ -434,6 +436,5 @@ end
 
 # Combines the provided ERB template with optional parameters
 def erb_template(filename, params = {})
-  renderer = ERB.new(file(filename), nil, '-')
   ERB.new(file(filename), nil, '-').result(Namespace.new(params).get_binding)
 end

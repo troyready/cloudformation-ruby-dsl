@@ -21,20 +21,20 @@ class Table
 
   def initialize(table_as_text)
     raw_header, *raw_data = Detabulator.new.detabulate table_as_text
-    raw_header = raw_header.map { |s| s.to_sym }
-    @records = raw_data.map { |row| Hash[raw_header.zip(row)] }
+    header = raw_header.map(&:to_sym)
+    @records = raw_data.map { |row| Hash[header.zip(row)] }
   end
 
   # Selects all rows in the table which match the name/value pairs of the predicate object and returns
   # the single distinct value from those rows for the specified key.
   def get(key, predicate)
-    distinct_values(filter(@records, predicate), key, false)
+    distinct_values(filter(predicate), key, false)
   end
 
   # Selects all rows in the table which match the name/value pairs of the predicate object and returns
   # all distinct values from those rows for the specified key.
   def get_list(key, predicate)
-    distinct_values(filter(@records, predicate), key, true)
+    distinct_values(filter(predicate), key, true)
   end
 
   # Selects all rows in the table which match the name/value pairs of the predicate object and returns a
@@ -42,7 +42,7 @@ class Table
   # except for the last key in the specified keys which is used to determine the value of the leaf-level map.
   # In the simple case where keys is a list of 2 elements, this returns a map from key[0] to key[1].
   def get_map(predicate, *keys)
-    build_nested_map(filter(@records, predicate), keys, false)
+    build_nested_map(filter(predicate), keys, false)
   end
 
   # Selects all rows in the table which match the name/value pairs of the predicate object and returns a
@@ -51,14 +51,14 @@ class Table
   # leaf-level map.  In the simple case where keys is a list of 2 elements, this returns a map from key[0]
   # to a list of values for key[1].
   def get_multimap(predicate, *keys)
-    build_nested_map(filter(@records, predicate), keys, true)
+    build_nested_map(filter(predicate), keys, true)
   end
 
   private
 
-  # Given an array of Hash objects, return the subset that match the predicate for all keys in the predicate.
-  def filter(records, predicate)
-    records.select { |record| predicate.all? { |k, v| record[k] == v } }
+  # Return the subset of records that match the predicate for all keys in the predicate.
+  def filter(predicate)
+    @records.select { |record| predicate.all? { |key, value| record[key] == value } }
   end
 
   def build_nested_map(records, path, multi)
