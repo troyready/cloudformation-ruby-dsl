@@ -59,9 +59,9 @@ def cfn_cmd(template)
   immutable_parameters = template.excise_parameter_attribute!(:Immutable)
 
   # Tag CloudFormation stacks based on :Tags defined in the template
-  cfn_tags = template.excise_tags!.sort
+  cfn_tags = template.excise_tags!
   # The command line string looks like: --tag "Key=key; Value=value" --tag "Key2=key2; Value2=value"
-  cfn_tags_options = cfn_tags.map { |tag| ["--tag", "\"Key=%s; Value=%s\" " % tag.split('=')] }.flatten
+  cfn_tags_options = cfn_tags.sort.map { |tag| ["--tag", "Key=%s; Value=%s" % tag.split('=')] }.flatten
 
   template_string = JSON.pretty_generate(template)
 
@@ -100,27 +100,23 @@ def cfn_cmd(template)
     old_template_string          = exec_capture_stdout("cfn-cmd cfn-get-template #{cfn_options_string}")
     old_stack_description        = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --show-long")
     old_stack_description_parsed = CSV.parse_line(old_stack_description)
-    old_stack_cfn_tags           = old_stack_description_parsed[13].split(';').sort
+    old_stack_description_parsed = old_stack_description_parsed.map { |field| if field != '(nil)' then field else '' end }
+    old_tags_string              = old_stack_description_parsed[13]
     old_parameters_string        = old_stack_description_parsed[6]
 
-    # Sort the parameters strings alphabetically to make them easily comparable
+    # Sort the tag strings alphabetically to make them easily comparable
+    old_tags_string = (old_tags_string || '').split(';').sort.map { |tag| %Q(TAG "#{tag}"\n) }.join
+    tags_string     = cfn_tags.sort.map { |tag| "TAG \"#{tag}\"\n" }.join
+
+    # Sort the parameter strings alphabetically to make them easily comparable
     old_parameters_string = (old_parameters_string || '').split(';').sort.map { |param| %Q(PARAMETER "#{param}"\n) }.join
     parameters_string     = template.parameters.sort.map { |key, value| "PARAMETER \"#{key}=#{value}\"\n" }.join
 
     # Diff the expanded template with the template from CloudFormation.
     old_temp_file = File.absolute_path("#{$PROGRAM_NAME}.current.json")
-    File.write(old_temp_file, old_parameters_string + old_template_string)
     new_temp_file = File.absolute_path("#{$PROGRAM_NAME}.expanded.json")
-    File.write(new_temp_file, parameters_string + %Q(TEMPLATE  "#{template_string}\n"\n))
-
-    # Compare CloudFormation tags
-    unless cfn_tags == old_stack_cfn_tags
-      puts "Tag differences:\n"
-      puts (old_stack_cfn_tags - cfn_tags).map {|tag| "< #{tag}" }
-      puts "---"
-      puts (cfn_tags - old_stack_cfn_tags).map {|tag| "> #{tag}" }
-      puts "\n"
-    end
+    File.write(old_temp_file, old_tags_string + old_parameters_string + old_template_string)
+    File.write(new_temp_file, tags_string + parameters_string + %Q(TEMPLATE  "#{template_string}\n"\n))
 
     # Compare templates
     system(*["diff"] + diff_options + [old_temp_file, new_temp_file])
