@@ -234,7 +234,6 @@ class JsonObjectDSL
   end
 
   def to_json(*args)
-#     compact!
     @dict.to_json(*args)
   end
 
@@ -320,6 +319,8 @@ class TemplateDSL < JsonObjectDSL
     end
   end
 
+  def condition(name, options) default(:Conditions, {})[name] = options end
+
   def resource(name, options) default(:Resources, {})[name] = options end
 
   def output(name, options) default(:Outputs, {})[name] = options end
@@ -355,6 +356,8 @@ def join_list(delim, list) { :'Fn::Join' => [ delim, list ] } end
 def select(index, list) { :'Fn::Select' => [ index, list ] } end
 
 def ref(name) { :Ref => name } end
+
+def no_value() ref("AWS::NoValue") end
 
 # Read the specified file and return its value as a string literal
 def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_NAME))) end

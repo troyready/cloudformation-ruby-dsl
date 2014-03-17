@@ -37,7 +37,7 @@ SPOT_PRICES_BY_INSTANCE_TYPE = {
 
 def spot_price(spot_price_string, instance_type)
   case spot_price_string
-    when 'false', '' then nil
+    when 'false', '' then no_value()
     when 'true' then spot_price_for_instance_type(instance_type)
     else spot_price_string
   end
