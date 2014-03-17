@@ -342,8 +342,11 @@ def get_att(resource, attribute) { :'Fn::GetAtt' => [ resource, attribute ] } en
 def get_azs(region = '') { :'Fn::GetAZs' => region } end
 
 def join(delim, *list)
-  return list[0] unless list.length > 1
-  {:'Fn::Join' => [ delim, list ] }
+  case list.length
+    when 0 then ''
+    when 1 then list[0]
+    else join_list(delim,list)
+  end
 end
 
 # Variant of join that matches the native CFN syntax.
