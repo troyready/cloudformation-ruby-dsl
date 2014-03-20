@@ -79,6 +79,7 @@ def cfn_cmd(template)
     puts template_string
     
     exit(true)
+
   when 'diff'
     # example: <template.rb> diff my-stack-name --parameters "Env=prod" --region eu-west-1
     # Diff the current template for an existing stack with the expansion of this template.
@@ -98,11 +99,9 @@ def cfn_cmd(template)
     # Run CloudFormation commands to describe the existing stack
     cfn_options_string           = cfn_options.map { |arg| "'#{arg}'" }.join(' ')
     old_template_string          = exec_capture_stdout("cfn-cmd cfn-get-template #{cfn_options_string}")
-    old_stack_description        = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --show-long")
-    old_stack_description_parsed = CSV.parse_line(old_stack_description)
-    old_stack_description_parsed = old_stack_description_parsed.map { |field| if field != '(nil)' then field else '' end }
-    old_tags_string              = old_stack_description_parsed[13]
-    old_parameters_string        = old_stack_description_parsed[6]
+    old_stack_attributes         = exec_describe_stack(cfn_options_string)
+    old_tags_string              = old_stack_attributes["TAGS"]
+    old_parameters_string        = old_stack_attributes["PARAMETERS"]
 
     # Sort the tag strings alphabetically to make them easily comparable
     old_tags_string = (old_tags_string || '').split(';').sort.map { |tag| %Q(TAG "#{tag}"\n) }.join
@@ -131,23 +130,22 @@ def cfn_cmd(template)
     _, cmdline = extract_options(cmdline, %w(), %w(--parameters --tag))
 
   when 'cfn-update-stack'
+    # Pick out the subset of cfn-update-stack options that apply to cfn-describe-stacks.
+    cfn_options, other_options = extract_options(ARGV[1..-1], %w(),
+      %w(--stack-name --region --connection-timeout -I --access-key-id -S --secret-key -K --ec2-private-key-file-path -U --url))
+
+    # If the first argument is a stack name then shift it over to cfn_options.
+    if other_options[0] && !(/^-/ =~ other_options[0])
+      cfn_options.unshift(other_options.shift)
+    end
+
+    # Run CloudFormation command to describe the existing stack
+    cfn_options_string = cfn_options.map { |arg| "'#{arg}'" }.join(' ')
+    old_stack_attributes = exec_describe_stack(cfn_options_string)
+
     # If updating a stack and some parameters are marked as immutable, fail if the new parameters don't match the old ones.
     if not immutable_parameters.empty?
-
-      # Pick out the subset of cfn-update-stack options that apply to cfn-describe-stacks.
-      cfn_options, other_options = extract_options(ARGV[1..-1], %w(),
-        %w(--stack-name --region --connection-timeout -I --access-key-id -S --secret-key -K --ec2-private-key-file-path -U --url))
-
-      # If the first argument is a stack name then shift it over to cfn_options.
-      if other_options[0] && !(/^-/ =~ other_options[0])
-        cfn_options.unshift(other_options.shift)
-      end
-
-      # Run CloudFormation command to describe the existing stack
-      cfn_options_string = cfn_options.map { |arg| "'#{arg}'" }.join(' ')
-      old_stack_description = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --show-long")
-      old_parameters_string = CSV.parse_line(old_stack_description)[6]
-
+      old_parameters_string = old_stack_attributes["PARAMETERS"]
       old_parameters = Hash[(old_parameters_string || '').split(';').map { |pair| pair.split('=', 2) }]
       new_parameters = template.parameters
 
@@ -160,12 +158,10 @@ def cfn_cmd(template)
       end
     end
 
-    # The cfn-update-stack command doesn't support --tag options, so remove it and validate against the existing stack to ensure they aren't different
-    _, cmdline = extract_options(cmdline, %w(), %w(--tag))
-    # 13 is the tag column; it's also the last column (size-1)
-    old_cfn_tags = CSV.parse_line(exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --show-long"))[13].split(';').sort
-
-    # compare the sorted arrays for an exact match
+    # Tags are immutable in CloudFormation.  The cfn-update-stack command doesn't support --tag options, so remove
+    # the argument (if it exists) and validate against the existing stack to ensure tags haven't changed.
+    # Compare the sorted arrays for an exact match
+    old_cfn_tags = old_stack_attributes["TAGS"].split(';').sort
     if cfn_tags != old_cfn_tags
       $stderr.puts "CloudFormation stack tags do not match and cannot be updated. You must either use the same tags or create a new stack." +
                       "\n" + (old_cfn_tags - cfn_tags).map {|tag| "< #{tag}" }.join("\n") +
@@ -173,6 +169,7 @@ def cfn_cmd(template)
                       "\n" + (cfn_tags - old_cfn_tags).map {|tag| "> #{tag}"}.join("\n")
       exit(false)
     end
+    _, cmdline = extract_options(cmdline, %w(), %w(--tag))
   end
 
   # Execute command cmdline
@@ -185,6 +182,15 @@ def cfn_cmd(template)
   File.delete(temp_file)
 
   exit(true)
+end
+
+def exec_describe_stack cfn_options_string
+  map = {}
+  csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --headers --show-long")
+  CSV.parse_line(csv_data, :headers => true).each do |header, field|
+    map[header] = (if field != '(nil)' then field else '' end)
+  end
+  map
 end
 
 def exec_capture_stdout command
