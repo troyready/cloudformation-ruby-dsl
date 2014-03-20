@@ -25,6 +25,11 @@ require 'json'
 require 'yaml'
 require 'erb'
 
+# A custom converter to replace the String "(nil)" with NilClass
+CSV::Converters[:nil_to_nil] = lambda do |field|
+  field && field == '(nil)' ? nil : field
+end
+
 ############################# Command-line and "cfn-cmd" Support
 
 # Parse command-line arguments based on cfn-cmd syntax (cfn-create-stack etc.) and return the parameters and region
@@ -161,7 +166,7 @@ def cfn_cmd(template)
     # Tags are immutable in CloudFormation.  The cfn-update-stack command doesn't support --tag options, so remove
     # the argument (if it exists) and validate against the existing stack to ensure tags haven't changed.
     # Compare the sorted arrays for an exact match
-    old_cfn_tags = old_stack_attributes["TAGS"].split(';').sort
+    old_cfn_tags = old_stack_attributes['TAGS'].split(';').sort rescue [] # Use empty Array if .split fails
     if cfn_tags != old_cfn_tags
       $stderr.puts "CloudFormation stack tags do not match and cannot be updated. You must either use the same tags or create a new stack." +
                       "\n" + (old_cfn_tags - cfn_tags).map {|tag| "< #{tag}" }.join("\n") +
@@ -185,12 +190,8 @@ def cfn_cmd(template)
 end
 
 def exec_describe_stack cfn_options_string
-  map = {}
   csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --headers --show-long")
-  CSV.parse_line(csv_data, :headers => true).each do |header, field|
-    map[header] = (if field != '(nil)' then field else '' end)
-  end
-  map
+  CSV.parse_line(csv_data, :headers => true, :converters => :nil_to_nil)
 end
 
 def exec_capture_stdout command
