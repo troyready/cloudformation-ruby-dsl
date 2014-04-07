@@ -1,6 +1,8 @@
 # cloudformation-ruby-dsl
 
-A Ruby DSL and helper utilities for building Cloudformation templates dynamically. Written by [Bazaarvoice](http://www.bazaarvoice.com).
+A Ruby DSL and helper utilities for building Cloudformation templates dynamically.
+
+Written by [Bazaarvoice](http://www.bazaarvoice.com): see [the contributors page](https://github.com/bazaarvoice/cloudformation-ruby-dsl/graphs/contributors) and [the initial contributions](https://github.com/bazaarvoice/cloudformation-ruby-dsl/blob/master/initial_contributions.md) for more details.
 
 ## Motivation
 
