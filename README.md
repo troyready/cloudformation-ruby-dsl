@@ -35,4 +35,34 @@ Make the resulting file executable (`chmod +x [NEW_NAME.rb]`). It can respond to
 - `cfn-create-stack`: create a new stack from the output
 - `cfn-update-stack`: update an existing stack from the output
 
-See [the example script](examples/cloudformation-ruby-script.rb) for more usage information of the DSL itself.
+Below are the various functions currently available in the DSL. See [the example script](examples/cloudformation-ruby-script.rb) for more usage information.
+
+### DSL Statements
+
+Add the named object to the appropriate collection.
+- `parameter(name, options)` (may be marked :Immutable, which will raise error on a later change)
+- `mapping(name, options)`
+- `condition(name, options)`
+- `resource(name, options)`
+- `output(name, options)`
+
+### Cloudformation Function Calls
+
+Invoke a native Cloudformation function.
+- `base64(value)`
+- `find_in_map(map, key, name)`
+- `get_att(resource, attribute)`
+- `get_azs(region)`
+- `join(delim, *list)`
+- `select(index, list)`
+- `ref(name)`
+- `no_value()`
+
+### Utility Functions
+
+Additional capabilities for file inclusion, etc.
+- `tag(tag)`: add tags to the stack, which are inherited by all resources in that stack; can only be used at launch
+- `file(name)`: return the named file as a string, for further use
+- `load_from_file(filename)`: load the named file by a given type; currently handles YAML, JSON, and Ruby
+- `interpolate(string)`: embed CFN references into a string (`{{ref('Service')}}`) for later interpretation by the CFN engine
+- `Table.load(filename)`: load a table from the listed file, which can then be turned into mappings (via `get_map`)
