@@ -25,7 +25,7 @@ Gem::Specification.new do |gem|
   gem.email         = ["Shawn.Smith@bazaarvoice.com", "Dave.Barcelo@bazaarvoice.com", "Morgan.Fletcher@bazaarvoice.com", "Csongor.Gyuricza@bazaarvoice.com", "Igor.Polishchuk@bazaarvoice.com", "Nathaniel.Eliot@bazaarvoice.com", "Jona.Fenocchi@bazaarvoice.com", "Tony.Cui@bazaarvoice.com"]
   gem.description   = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.}
   gem.summary       = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.  Written by [Bazaarvoice](http://www.bazaarvoice.com).}
-  gem.homepage      = ""
+  gem.homepage      = "http://github.com/bazaarvoice/cloudformation-ruby-dsl"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
