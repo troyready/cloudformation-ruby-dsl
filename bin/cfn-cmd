@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+# This script proxies the commands to service like cfn-cmd does, but in ruby so that gemstubs work
+vendor=File.expand_path('../../vendor/AWSCloudFormation-1.0.12',__FILE__)
+exec "SERVICE_HOME=#{vendor} #{vendor}/bin/service \"#{ARGV.join('" "')}\""
