@@ -1,6 +1,6 @@
 {
     "Mappings": {
-        "bar": {
+        "JsonExampleMap": {
             "foo": "bar"
         }
     }
