@@ -70,11 +70,11 @@ template do
           }
 
   # Generates mappings from external files with various formats.
-  mapping 'JsonExampleMap', 'maps/json_map.json'
+  mapping 'JsonExampleMap', 'maps/map.json'
 
-  mapping 'RubyExampleMap', 'maps/ruby_map.rb'
+  mapping 'RubyExampleMap', 'maps/map.rb'
 
-  mapping 'YamlExampleMap', 'maps/yaml_map.yaml'
+  mapping 'YamlExampleMap', 'maps/map.yaml'
 
   # Loads JSON mappings dynamically from example directory.
   Dir.entries('maps/more_maps').each_with_index do |path, index|
@@ -85,7 +85,7 @@ template do
   # Selects all rows in the table which match the name/value pairs of the predicate object and returns a
   # set of nested maps, where the key for the map at level n is the key at index n in the specified keys,
   # except for the last key in the specified keys which is used to determine the value of the leaf-level map.
-  text = Table.load 'maps/text_table.txt'
+  text = Table.load 'maps/table.txt'
   mapping 'TableExampleMap',
       text.get_map({ :column0 => 'foo' }, :column1, :column2, :column3)
 
