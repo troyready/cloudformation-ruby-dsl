@@ -285,7 +285,7 @@ class TemplateDSL < JsonObjectDSL
     # if options is a string and a valid file then the script will process the external file.
     default(:Mappings, {})[name] = \
       if options.is_a?(Hash); options
-      elsif options.is_a?(String); load_from_file(options)['Mappings']
+      elsif options.is_a?(String); load_from_file(options)['Mappings'][name]
       else; raise("Options for mapping #{name} is neither a string or a hash.  Error!")
     end
   end
