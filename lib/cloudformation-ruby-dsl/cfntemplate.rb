@@ -190,7 +190,7 @@ def cfn_cmd(template)
 end
 
 def exec_describe_stack cfn_options_string
-  csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --headers --show-long")
+  csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks --stack-name #{cfn_options_string} --headers --show-long")
   CSV.parse_line(csv_data, :headers => true, :converters => :nil_to_nil)
 end
 
@@ -285,7 +285,7 @@ class TemplateDSL < JsonObjectDSL
     # if options is a string and a valid file then the script will process the external file.
     default(:Mappings, {})[name] = \
       if options.is_a?(Hash); options
-      elsif options.is_a?(String); load_from_file(options)['Mappings']
+      elsif options.is_a?(String); load_from_file(options)['Mappings'][name]
       else; raise("Options for mapping #{name} is neither a string or a hash.  Error!")
     end
   end

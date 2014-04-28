@@ -1,0 +1,5 @@
+{
+  'Mappings' => {
+    'RubyExampleMap' => { 'baz' => 'blah' }
+  }
+}
