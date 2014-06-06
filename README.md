@@ -29,7 +29,7 @@ To convert existing JSON templates to use the DSL, run
 You may need to preface this with `bundle exec` if you installed via Bundler.
 
 Make the resulting file executable (`chmod +x [NEW_NAME.rb]`). It can respond to the following subcommands (which are listed if you run without parameters):
-- `expand`: output the JSON template to the command line
+- `expand`: output the JSON template to the command line (takes optional `--minify true` to minimize the output)
 - `diff`: compare output with existing JSON for a stack
 - `cfn-validate-template`: run validation against the stack definition
 - `cfn-create-stack`: create a new stack from the output
