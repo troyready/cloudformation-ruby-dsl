@@ -36,6 +36,7 @@ end
 def cfn_parse_args
   parameters = {}
   region = ENV['EC2_REGION'] || ENV['AWS_DEFAULT_REGION'] || 'us-east-1'
+  minify = false
   ARGV.slice_before(/^--/).each do |name, value|
     next unless value
     case name
@@ -43,9 +44,11 @@ def cfn_parse_args
       parameters = Hash[value.split(/;/).map { |pair| pair.split(/=/, 2) }]
     when '--region'
       region = value
+    when '--minify'
+      minify = value === "true"
     end
   end
-  [parameters, region]
+  [parameters, region, minify]
 end
 
 def cfn_cmd(template)
@@ -68,23 +71,27 @@ def cfn_cmd(template)
   # The command line string looks like: --tag "Key=key; Value=value" --tag "Key2=key2; Value2=value"
   cfn_tags_options = cfn_tags.sort.map { |tag| ["--tag", "Key=%s; Value=%s" % tag.split('=')] }.flatten
 
-  template_string = JSON.pretty_generate(template)
+  if action == 'expand'
+    # Write the pretty-printed JSON template to stdout and exit.  [--minify true] option writes minified output
+    # example: <template.rb> expand --parameters "Env=prod" --region eu-west-1 --minify true
+    if template.minify
+      puts JSON.generate(template)
+    else
+      puts JSON.pretty_generate(template)
+    end
+
+    exit(true)
+  end
 
   # example: <template.rb> cfn-create-stack my-stack-name --parameters "Env=prod" --region eu-west-1
   # Execute the AWS CLI cfn-cmd command to validate/create/update a CloudFormation stack.
+  template_string = JSON.generate(template)
   temp_file = File.absolute_path("#{$PROGRAM_NAME}.expanded.json")
   File.write(temp_file, template_string)
 
   cmdline = ['cfn-cmd'] + ARGV + ['--template-file', temp_file] + cfn_tags_options
 
   case action
-  when 'expand'
-    # Write the pretty-printed JSON template to stdout.
-    # example: <template.rb> expand --parameters "Env=prod" --region eu-west-1
-    puts template_string
-    
-    exit(true)
-
   when 'diff'
     # example: <template.rb> diff my-stack-name --parameters "Env=prod" --region eu-west-1
     # Diff the current template for an existing stack with the expansion of this template.
@@ -254,10 +261,10 @@ end
 
 # Core interpreter for the DSL
 class TemplateDSL < JsonObjectDSL
-  attr_reader :parameters, :aws_region
+  attr_reader :parameters, :aws_region, :minify
 
   def initialize()
-    @parameters, @aws_region = cfn_parse_args
+    @parameters, @aws_region, @minify = cfn_parse_args
     super
   end
 
