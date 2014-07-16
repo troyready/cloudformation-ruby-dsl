@@ -57,8 +57,15 @@ class Table
   private
 
   # Return the subset of records that match the predicate for all keys in the predicate.
+  # The predicate is expected to be a map of key/value or key/[value,...] pairs.
   def filter(predicate)
-    @records.select { |record| predicate.all? { |key, value| record[key] == value } }
+    def matches(predicate_value, record_value)
+      if predicate_value.is_a?(Array); predicate_value.include?(record_value)
+      else; predicate_value == record_value
+      end
+    end
+
+    @records.select { |record| predicate.all? { |key, value| matches(value, record[key]) } }
   end
 
   def build_nested_map(records, path, multi)

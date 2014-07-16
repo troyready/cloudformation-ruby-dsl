@@ -89,6 +89,11 @@ template do
   mapping 'TableExampleMap',
       text.get_map({ :column0 => 'foo' }, :column1, :column2, :column3)
 
+  # Shows how to create a table useful for looking up subnets that correspond to a particular env/region for eg. vpc placement.
+  vpc = Table.load 'maps/vpc.txt'
+  mapping 'TableExampleMultimap',
+          vpc.get_multimap({ :visibility => 'private', :zone => ['a', 'c'] }, :env, :region, :subnet)
+
   # The tag type is a Ruby CFN extension. These tags are excised from the template and used to generate a series of --tag arguments
   #   which are passed to cfn-cmd. They do not ultimately appear in the expanded Cloudformation template. The diff subcommand will
   #   compare tags with the running stack and identify any changes, but cfn-update-stack will do the diff and throw an error on any
