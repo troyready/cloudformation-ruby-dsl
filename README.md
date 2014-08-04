@@ -1,18 +1,18 @@
 # cloudformation-ruby-dsl
 
-A Ruby DSL and helper utilities for building Cloudformation templates dynamically.
+A Ruby DSL and helper utilities for building CloudFormation templates dynamically.
 
 Written by [Bazaarvoice](http://www.bazaarvoice.com): see [the contributors page](https://github.com/bazaarvoice/cloudformation-ruby-dsl/graphs/contributors) and [the initial contributions](https://github.com/bazaarvoice/cloudformation-ruby-dsl/blob/master/initial_contributions.md) for more details.
 
 ## Motivation
 
-Cloudformation templates often contain repeated stanzas, information which must be loaded from external sources, and other functionality that would be easier handled as code, instead of configuration. 
+CloudFormation templates often contain repeated stanzas, information which must be loaded from external sources, and other functionality that would be easier handled as code, instead of configuration.
 
-Consider when a userdata script needs to be added to a Cloudformation template. Traditionally, you would re-write the script by hand in a valid JSON format. Using the DSL, you can specify the file containing the script and generate the correct information at runtime.
+Consider when a userdata script needs to be added to a CloudFormation template. Traditionally, you would re-write the script by hand in a valid JSON format. Using the DSL, you can specify the file containing the script and generate the correct information at runtime.
 
     :UserData => base64(interpolate(file('userdata.sh')))
 
-Additionally, Cloudformation templates are just massive JSON documents, making general readability and reusability an issue. The DSL allows not only a cleaner format (and comments!), but will also allow the same DSL template to be reused as needed.
+Additionally, CloudFormation templates are just massive JSON documents, making general readability and reusability an issue. The DSL allows not only a cleaner format (and comments!), but will also allow the same DSL template to be reused as needed.
 
 ## Installation
 
@@ -46,9 +46,9 @@ Add the named object to the appropriate collection.
 - `resource(name, options)`
 - `output(name, options)`
 
-### Cloudformation Function Calls
+### CloudFormation Function Calls
 
-Invoke a native Cloudformation function.
+Invoke an intrinsic CloudFormation function.
 - `base64(value)`
 - `find_in_map(map, key, name)`
 - `get_att(resource, attribute)`
@@ -56,7 +56,14 @@ Invoke a native Cloudformation function.
 - `join(delim, *list)`
 - `select(index, list)`
 - `ref(name)`
-- `no_value()`
+
+Reference a CloudFormation pseudo parameter.
+- `aws_account_id()`
+- `aws_notification_arns()`
+- `aws_no_value()`
+- `aws_region()`
+- `aws_stack_id()`
+- `aws_stack_name()`
 
 ### Utility Functions
 

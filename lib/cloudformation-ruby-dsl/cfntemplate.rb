@@ -376,7 +376,15 @@ def select(index, list) { :'Fn::Select' => [ index, list ] } end
 
 def ref(name) { :Ref => name } end
 
-def no_value() ref("AWS::NoValue") end
+def aws_account_id() ref("AWS::AccountId") end
+
+def aws_notification_arns() ref("AWS::NotificationARNs") end
+
+def aws_no_value() ref("AWS::NoValue") end
+
+def aws_stack_id() ref("AWS::StackId") end
+
+def aws_stack_name() ref("AWS::StackName") end
 
 # Read the specified file and return its value as a string literal
 def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_NAME))) end
