@@ -286,6 +286,14 @@ def fmt_string(s)
   end
 end
 
+def many(val)
+  if val.is_a?(Array)
+    val
+  else
+    [ val ]
+  end
+end
+
 def simplify(val)
   if val.is_a?(Hash)
     val = Hash[val.map { |k,v| [k, simplify(v)] }]
@@ -304,7 +312,7 @@ def simplify(val)
         when k == 'Fn::GetAZs'
           FnCall.new 'get_azs', v != '' ? [v] : []
         when k == 'Fn::Join'
-          FnCall.new 'join', [v[0]] + v[1], true
+          FnCall.new 'join', [v[0]] + many(v[1]), true
         when k == 'Fn::Select'
           FnCall.new 'select', v
         when k == 'Ref' && v == 'AWS::Region'
