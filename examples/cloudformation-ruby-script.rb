@@ -19,7 +19,7 @@ require 'cloudformation-ruby-dsl/cfntemplate'
 require 'cloudformation-ruby-dsl/table'
 
 # Note: this is only intended to demonstrate the cloudformation-ruby-dsl. It compiles
-#   and validates correctly, but won't produce a viable Cloudformation stack.
+#   and validates correctly, but won't produce a viable CloudFormation stack.
 
 template do
 
@@ -95,7 +95,7 @@ template do
           vpc.get_multimap({ :visibility => 'private', :zone => ['a', 'c'] }, :env, :region, :subnet)
 
   # The tag type is a Ruby CFN extension. These tags are excised from the template and used to generate a series of --tag arguments
-  #   which are passed to cfn-cmd. They do not ultimately appear in the expanded Cloudformation template. The diff subcommand will
+  #   which are passed to cfn-cmd. They do not ultimately appear in the expanded CloudFormation template. The diff subcommand will
   #   compare tags with the running stack and identify any changes, but cfn-update-stack will do the diff and throw an error on any
   #   changes. The tags are propagated to all resources created by the stack, including the stack itself.
   #

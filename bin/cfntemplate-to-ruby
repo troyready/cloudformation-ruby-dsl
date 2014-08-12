@@ -315,8 +315,16 @@ def simplify(val)
           FnCall.new 'join', [v[0]] + many(v[1]), true
         when k == 'Fn::Select'
           FnCall.new 'select', v
+        when k == 'Ref' && v == 'AWS::AccountId'
+          FnCall.new 'aws_account_id', []
+        when k == 'Ref' && v == 'AWS::NotificationARNs'
+          FnCall.new 'aws_notification_arns', []
+        when k == 'Ref' && v == 'AWS::NoValue'
+          FnCall.new 'aws_no_value', []
         when k == 'Ref' && v == 'AWS::Region'
           FnCall.new 'aws_region', []
+        when k == 'Ref' && v == 'AWS::StackId'
+          FnCall.new 'aws_stack_id', []
         when k == 'Ref' && v == 'AWS::StackName'
           FnCall.new 'aws_stack_name', []
         when k == 'Ref'
