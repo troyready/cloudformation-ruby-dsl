@@ -387,7 +387,10 @@ def aws_stack_id() ref("AWS::StackId") end
 def aws_stack_name() ref("AWS::StackName") end
 
 # deprecated, for backward compatibility
-def no_value() aws_no_value() end
+def no_value()
+    warn_deprecated('no_value()', 'aws_no_value()')
+    aws_no_value()
+end
 
 # Read the specified file and return its value as a string literal
 def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_NAME))) end
@@ -427,4 +430,8 @@ end
 # Combines the provided ERB template with optional parameters
 def erb_template(filename, params = {})
   ERB.new(file(filename), nil, '-').result(Namespace.new(params).get_binding)
+end
+
+def warn_deprecated(old, new)
+    $stderr.puts "Warning: '#{old}' has been deprecated.  Please update your template to use '#{new}' instead."
 end
