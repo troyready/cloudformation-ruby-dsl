@@ -386,6 +386,9 @@ def aws_stack_id() ref("AWS::StackId") end
 
 def aws_stack_name() ref("AWS::StackName") end
 
+# deprecated, for backward compatibility
+def no_value() aws_no_value() end
+
 # Read the specified file and return its value as a string literal
 def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_NAME))) end
 
