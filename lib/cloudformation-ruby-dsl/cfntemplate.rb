@@ -203,7 +203,7 @@ def cfn_cmd(template)
 end
 
 def exec_describe_stack cfn_options_string
-  csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks --stack-name #{cfn_options_string} --headers --show-long")
+  csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --headers --show-long")
   CSV.parse_line(csv_data, :headers => true, :converters => :nil_to_nil)
 end
 
