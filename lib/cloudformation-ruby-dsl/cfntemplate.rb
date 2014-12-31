@@ -94,6 +94,9 @@ def cfn_cmd(template)
 
   cmdline = ['cfn-cmd'] + ARGV + ['--template-file', temp_file] + cfn_tags_options
 
+  # Add the required default capability if no capabilities were specified
+  cmdline = cmdline + ['-c', 'CAPABILITY_IAM'] if not ARGV.include?('--capabilities') or ARGV.include?('-c')
+
   case action
   when 'diff'
     # example: <template.rb> diff my-stack-name --parameters "Env=prod" --region eu-west-1
