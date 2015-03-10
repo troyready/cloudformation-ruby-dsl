@@ -183,7 +183,7 @@ def cfn_cmd(template)
     # the argument (if it exists) and validate against the existing stack to ensure tags haven't changed.
     # Compare the sorted arrays for an exact match
     old_cfn_tags = old_stack_attributes['TAGS'].split(';').sort rescue [] # Use empty Array if .split fails
-    if cfn_tags != old_cfn_tags
+    if cfn_tags.sort != old_cfn_tags
       $stderr.puts "CloudFormation stack tags do not match and cannot be updated. You must either use the same tags or create a new stack." +
                       "\n" + (old_cfn_tags - cfn_tags).map {|tag| "< #{tag}" }.join("\n") +
                       "\n" + "---" +
