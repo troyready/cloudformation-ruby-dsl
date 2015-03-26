@@ -207,7 +207,7 @@ end
 
 def exec_describe_stack cfn_options_string
   csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --headers --show-long")
-  CSV.parse_line(csv_data, :headers => true, :converters => :nil_to_nil)
+  CSV.parse_line(csv_data, :quote_char => "'", :headers => true, :converters => :nil_to_nil)
 end
 
 def exec_capture_stdout command
