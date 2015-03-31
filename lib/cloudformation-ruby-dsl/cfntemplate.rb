@@ -20,15 +20,10 @@ unless RUBY_VERSION >= '1.9'
 end
 
 require 'rubygems'
-require 'csv'
 require 'json'
 require 'yaml'
 require 'erb'
-
-# A custom converter to replace the String "(nil)" with NilClass
-CSV::Converters[:nil_to_nil] = lambda do |field|
-  field && field == '(nil)' ? nil : field
-end
+require 'xmlsimple'
 
 ############################# Command-line and "cfn-cmd" Support
 
@@ -164,9 +159,6 @@ def cfn_cmd(template)
     cfn_options_string = cfn_options.map { |arg| "'#{arg}'" }.join(' ')
     old_stack_attributes = exec_describe_stack(cfn_options_string)
 
-    puts old_stack_attributes
-    exit 1
-
     # If updating a stack and some parameters are marked as immutable, fail if the new parameters don't match the old ones.
     if not immutable_parameters.empty?
       old_parameters_string = old_stack_attributes["PARAMETERS"]
@@ -208,9 +200,16 @@ def cfn_cmd(template)
   exit(true)
 end
 
+def extract_kv_string(hash, prefix='')
+  key = "#{prefix}Key"
+  value = "#{prefix}Value"
+  hash["member"].map {|a| "#{a[key]}=#{a[value]}" }.join(';') rescue ''
+end
+
 def exec_describe_stack cfn_options_string
-  csv_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --headers --show-long")
-  CSV.parse_line(csv_data, :col_sep => "\t", :headers => true, :converters => :nil_to_nil)
+  xml_data = exec_capture_stdout("cfn-cmd cfn-describe-stacks #{cfn_options_string} --show-xml")
+  xml = XmlSimple.xml_in(xml_data, :ForceArray => false)["DescribeStacksResult"]["Stacks"]["member"]
+  { "TAGS" => extract_kv_string(xml["Tags"]), "PARAMETERS" => extract_kv_string(xml["Parameters"], "Parameter") }
 end
 
 def exec_capture_stdout command
