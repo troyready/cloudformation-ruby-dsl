@@ -35,4 +35,5 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency    'detabulator'
   gem.add_runtime_dependency    'json'
   gem.add_runtime_dependency    'xml-simple'
+  gem.add_runtime_dependency    'bundler'
 end
