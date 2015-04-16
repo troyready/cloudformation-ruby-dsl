@@ -62,6 +62,13 @@ def cfn_cmd(template)
 
   # Tag CloudFormation stacks based on :Tags defined in the template
   cfn_tags = template.excise_tags!
+
+  # Can't currently support spaces because the system() call escapes them and that fouls up the CLI
+  unless cfn_tags.select { |i| i =~ /\s+/ }.empty?
+    $stderr.puts "ERROR: Tag names or values cannot currently contain spaces. Please remove spaces and try again."
+    exit(2)
+  end
+
   # The command line string looks like: --tag "Key=key; Value=value" --tag "Key2=key2; Value2=value"
   cfn_tags_options = cfn_tags.sort.map { |tag| ["--tag", "Key=%s; Value=%s" % tag.split('=')] }.flatten
 
