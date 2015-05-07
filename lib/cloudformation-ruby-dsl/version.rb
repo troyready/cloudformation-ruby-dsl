@@ -15,7 +15,7 @@
 module Cfn
   module Ruby
     module Dsl
-      VERSION = "0.5.1"
+      VERSION = "0.5.2"
     end
   end
 end
