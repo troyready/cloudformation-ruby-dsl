@@ -325,7 +325,7 @@ class TemplateDSL < JsonObjectDSL
     begin
       # Figure out what the file extension is and process accordingly.
       contents = case File.extname(filename)
-        when ".rb"; eval(file.read)
+        when ".rb"; eval(file.read, nil, filename)
         when ".json"; JSON.load(file)
         when ".yaml"; YAML::load(file)
         else; raise("Do not recognize extension of #{filename}.")
@@ -414,12 +414,13 @@ def file(filename) File.read(File.absolute_path(filename, File.dirname($PROGRAM_
 # Interpolates a string like "NAME={{ref('Service')}}" and returns a CloudFormation "Fn::Join"
 # operation to collect the results.  Anything between {{ and }} is interpreted as a Ruby expression
 # and eval'd.  This is especially useful with Ruby "here" documents.
-def interpolate(string)
+# Local variables may also be exposed to the string via the `locals` hash.
+def interpolate(string, locals={})
   list = []
   while string.length > 0
     head, match, string = string.partition(/\{\{.*?\}\}/)
     list << head if head.length > 0
-    list << eval(match[2..-3]) if match.length > 0
+    list << eval(match[2..-3], nil, 'interpolated string') if match.length > 0
   end
 
   # Split out strings in an array by newline, for visibility

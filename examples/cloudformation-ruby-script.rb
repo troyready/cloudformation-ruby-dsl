@@ -167,8 +167,8 @@ template do
           {:DeviceName => '/dev/sdd', :VirtualName => 'ephemeral2'},
           {:DeviceName => '/dev/sde', :VirtualName => 'ephemeral3'},
       ],
-      # Loads an external userdata script.
-      :UserData => base64(interpolate(file('userdata.sh'))),
+      # Loads an external userdata script with an interpolated argument.
+      :UserData => base64(interpolate(file('userdata.sh'), time: Time.now)),
   }
 
   resource 'InstanceProfile', :Type => 'AWS::IAM::InstanceProfile', :Properties => {
