@@ -25,6 +25,9 @@ require 'yaml'
 require 'erb'
 require 'xmlsimple'
 
+VENDOR_PATH = File.expand_path("../../../vendor/AWSCloudFormation-1.0.12", __FILE__)
+SYSTEM_ENV = "export PATH=#{VENDOR_PATH}/bin:$PATH; export AWS_CLOUDFORMATION_HOME=#{VENDOR_PATH}"
+
 ############################# Command-line and "cfn-cmd" Support
 
 # Parse command-line arguments based on cfn-cmd syntax (cfn-create-stack etc.) and return the parameters and region
@@ -141,7 +144,7 @@ def cfn_cmd(template)
     File.write(new_temp_file, tags_string + parameters_string + template_string)
 
     # Compare templates
-    system(*["diff"] + diff_options + [old_temp_file, new_temp_file])
+    puts %x( #{SYSTEM_ENV}; #{(["diff"] + diff_options + [old_temp_file, new_temp_file]).join(' ')} )
 
     File.delete(old_temp_file)
     File.delete(new_temp_file)
@@ -196,7 +199,8 @@ def cfn_cmd(template)
   end
 
   # Execute command cmdline
-  unless system(*cmdline)
+  puts %x( #{SYSTEM_ENV}; #{cmdline.map {|i| "\"#{i}\" "}.join} )
+  unless $?
     $stderr.puts "\nExecution of 'cfn-cmd' failed.  To facilitate debugging, the generated JSON template " +
                      "file was not deleted.  You may delete the file manually if it isn't needed: #{temp_file}"
     exit(false)
@@ -220,7 +224,7 @@ def exec_describe_stack cfn_options_string
 end
 
 def exec_capture_stdout command
-  stdout = `#{command}`
+  stdout = %x( #{SYSTEM_ENV}; #{command} )
   unless $?.success?
     $stderr.puts stdout unless stdout.empty?  # cfn-cmd sometimes writes error messages to stdout
     exit(false)
