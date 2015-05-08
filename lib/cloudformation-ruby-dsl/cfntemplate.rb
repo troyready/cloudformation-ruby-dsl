@@ -32,11 +32,14 @@ SYSTEM_ENV = "export PATH=#{VENDOR_PATH}/bin:$PATH; export AWS_CLOUDFORMATION_HO
 
 # Parse command-line arguments based on cfn-cmd syntax (cfn-create-stack etc.) and return the parameters and region
 def cfn_parse_args
+  stack_name = nil
   parameters = {}
   region = ENV['EC2_REGION'] || ENV['AWS_DEFAULT_REGION'] || 'us-east-1'
   nopretty = false
   ARGV.slice_before(/^--/).each do |name, value|
     case name
+    when '--stack-name'
+      stack_name = value
     when '--parameters'
       parameters = Hash[value.split(/;/).map { |pair| pair.split(/=/, 2) }]
     when '--region'
@@ -45,7 +48,7 @@ def cfn_parse_args
       nopretty = true
     end
   end
-  [parameters, region, nopretty]
+  [stack_name, parameters, region, nopretty]
 end
 
 def cfn_cmd(template)
@@ -283,10 +286,10 @@ end
 
 # Core interpreter for the DSL
 class TemplateDSL < JsonObjectDSL
-  attr_reader :parameters, :aws_region, :nopretty
+  attr_reader :parameters, :aws_region, :nopretty, :stack_name
 
   def initialize()
-    @parameters, @aws_region, @nopretty = cfn_parse_args
+    @stack_name, @parameters, @aws_region, @nopretty = cfn_parse_args
     super
   end
 
