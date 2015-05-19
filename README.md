@@ -20,6 +20,14 @@ Run `gem install cloudformation-ruby-dsl` to install system-wide.
 
 To use in a specific project, add `gem 'cloudformation-ruby-dsl'` to your Gemfile, and then run `bundle`.
 
+## Releasing
+
+See [Releasing](docs/Releasing.md).
+
+## Contributing
+
+See [Contributing](docs/Contributing.md)
+
 ## Usage
 
 To convert existing JSON templates to use the DSL, run
@@ -57,6 +65,14 @@ Invoke an intrinsic CloudFormation function.
 - `select(index, list)`
 - `ref(name)`
 
+Intrinsic conditionals are also supported, with some syntactic sugar.
+- `fn_not(condition)`
+- `fn_or(*condition_list)`
+- `fn_and(*condition_list)`
+- `fn_if(condition, value_if_true, value_if_false)`
+- `equal(lhsOperand, rhsOperand)`
+- `not_equal(lhsOperand, rhsOperand)`
+
 Reference a CloudFormation pseudo parameter.
 - `aws_account_id()`
 - `aws_notification_arns()`
@@ -76,4 +92,4 @@ Additional capabilities for file inclusion, etc.
 
 ### Default Region
 
-The tool defaults to region 'us-east-1'. To change this set either 'EC2_REGION' or 'AWS_DEFAULT_REGION' environment variables.
+The tool defaults to region `us-east-1`. To change this set either `EC2_REGION` or `AWS_DEFAULT_REGION` in your environment.
