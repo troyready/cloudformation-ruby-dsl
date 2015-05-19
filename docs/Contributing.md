@@ -7,7 +7,7 @@ Thanks for your interest in contributing! Here are some things you should know.
 To get started:
 
 - fork this project on github
-- create a new branch named after the change you want to make; i.e., `git checkout -b myuser-mynewfeature`
+- create a new branch named after the change you want to make; i.e., `git checkout -b mynewfeature`
 - make your changes and commit them
 - send a pull request to this project from your fork/branch
 

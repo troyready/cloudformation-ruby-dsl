@@ -26,7 +26,7 @@ See [Releasing](docs/Releasing.md).
 
 ## Contributing
 
-See [Contributing](docs/Contributing.md)
+See [Contributing](docs/Contributing.md).
 
 ## Usage
 
@@ -50,7 +50,7 @@ Below are the various functions currently available in the DSL. See [the example
 Add the named object to the appropriate collection.
 - `parameter(name, options)` (may be marked :Immutable, which will raise error on a later change)
 - `mapping(name, options)`
-- `condition(name, options)`
+- `condition(name, conditions)`
 - `resource(name, options)`
 - `output(name, options)`
 
