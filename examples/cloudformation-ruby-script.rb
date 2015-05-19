@@ -172,7 +172,8 @@ template do
   }
 
   resource 'InstanceProfile', :Type => 'AWS::IAM::InstanceProfile', :Properties => {
-      :Path => '/',
+      # use cfn intrinsic conditional to choose the 2nd value because the expression evaluates to false
+      :Path => fn_if(equals(3, 0), '/unselected/', '/'),
       :Roles => [ ref('InstanceRole') ],
   }
 
@@ -188,6 +189,9 @@ template do
       },
       :Path => '/',
   }
+
+  # add conditions that can be used elsewhere in the template
+  condition 'myCondition', fn_and(equals("one", "two"), not_equals("three", "four"))
 
   output 'EmailSNSTopicARN',
           :Value => ref('EmailSNSTopic'),
