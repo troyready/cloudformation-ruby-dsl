@@ -23,8 +23,8 @@ Gem::Specification.new do |gem|
   gem.version       = Cfn::Ruby::Dsl::VERSION
   gem.authors       = ["Shawn Smith", "Dave Barcelo", "Morgan Fletcher", "Csongor Gyuricza", "Igor Polishchuk", "Nathaniel Eliot", "Jona Fenocchi", "Tony Cui"]
   gem.email         = ["Shawn.Smith@bazaarvoice.com", "Dave.Barcelo@bazaarvoice.com", "Morgan.Fletcher@bazaarvoice.com", "Csongor.Gyuricza@bazaarvoice.com", "Igor.Polishchuk@bazaarvoice.com", "Nathaniel.Eliot@bazaarvoice.com", "Jona.Fenocchi@bazaarvoice.com", "Tony.Cui@bazaarvoice.com"]
-  gem.description   = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.}
-  gem.summary       = %q{Ruby DSL library that provides a wrapper around the cfn-cmd.  Written by [Bazaarvoice](http://www.bazaarvoice.com).}
+  gem.description   = %q{Ruby DSL library that provides a wrapper around the CloudFormation.}
+  gem.summary       = %q{Ruby DSL library that provides a wrapper around the CloudFormation.  Written by [Bazaarvoice](http://www.bazaarvoice.com).}
   gem.homepage      = "http://github.com/bazaarvoice/cloudformation-ruby-dsl"
 
   gem.files         = `git ls-files`.split($/)
@@ -34,6 +34,7 @@ Gem::Specification.new do |gem|
 
   gem.add_runtime_dependency    'detabulator'
   gem.add_runtime_dependency    'json'
-  gem.add_runtime_dependency    'xml-simple'
   gem.add_runtime_dependency    'bundler'
+  gem.add_runtime_dependency    'aws-sdk'
+  gem.add_runtime_dependency    'diffy'
 end

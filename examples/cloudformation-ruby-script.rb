@@ -30,7 +30,7 @@ template do
             :MaxLength => '25',
             :AllowedPattern => '[_a-zA-Z0-9]*',
             :ConstraintDescription => 'Maximum length of the Label parameter may not exceed 25 characters and may only contain letters, numbers and underscores.',
-            # The :Immutable attribute is a Ruby CFN extension.  It affects the behavior of the '<template> cfn-update-stack ...'
+            # The :Immutable attribute is a Ruby CFN extension.  It affects the behavior of the '<template> update ...'
             # operation in that a stack update may not change the values of parameters marked w/:Immutable => true.
             :Immutable => true
 
@@ -94,18 +94,18 @@ template do
   mapping 'TableExampleMultimap',
           vpc.get_multimap({ :visibility => 'private', :zone => ['a', 'c'] }, :env, :region, :subnet)
 
-  # The tag type is a Ruby CFN extension. These tags are excised from the template and used to generate a series of --tag arguments
-  #   which are passed to cfn-cmd. They do not ultimately appear in the expanded CloudFormation template. The diff subcommand will
-  #   compare tags with the running stack and identify any changes, but cfn-update-stack will do the diff and throw an error on any
+  # The tag type is a DSL extension; it is not a property of actual CloudFormation templates.
+  #   These tags are excised from the template and used to generate a series of --tag arguments which are passed to CloudFormation when a stack is created.
+  #   They do not ultimately appear in the expanded CloudFormation template.
+  #   The diff subcommand will compare tags with the running stack and identify any changes, but a stack update will do the diff and throw an error on any
   #   changes. The tags are propagated to all resources created by the stack, including the stack itself.
   #
   # Amazon has set the following restrictions on CloudFormation tags:
   #   => limit 10
-  #   => immutable (you may not cfn-update-stack with new tags or different values for existing tags -- they will be rejected)
+  #   => immutable (you may not update a stack with new tags or different values for existing tags -- they will be rejected)
   #
-  # Additionally, cfn-cmd throws an error if your tag value contains spaces. This limitation will be lifted when we move from cfn-cmd
-  #   to the new unified CLI.
   tag :MyTag => 'MyValue'
+  tag :MyOtherTag => 'My Value With Spaces'
 
   resource 'SecurityGroup', :Type => 'AWS::EC2::SecurityGroup', :Properties => {
       :GroupDescription => 'Lets any vpc traffic in.',

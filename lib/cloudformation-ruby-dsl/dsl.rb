@@ -65,7 +65,7 @@ class TemplateDSL < JsonObjectDSL
   end
 
   def exec!()
-    cfn_cmd(self)
+    cfn(self)
   end
 
   def parameter(name, options)
@@ -111,10 +111,7 @@ class TemplateDSL < JsonObjectDSL
   end
 
   def excise_tags!
-    tags = []
-    @dict.fetch(:Tags, {}).each do | tag_name, tag_value |
-      tags << "#{tag_name}=#{tag_value}"
-    end
+    tags = @dict.fetch(:Tags, {})
     @dict.delete(:Tags)
     tags
   end

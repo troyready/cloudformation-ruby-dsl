@@ -39,9 +39,9 @@ You may need to preface this with `bundle exec` if you installed via Bundler.
 Make the resulting file executable (`chmod +x [NEW_NAME.rb]`). It can respond to the following subcommands (which are listed if you run without parameters):
 - `expand`: output the JSON template to the command line (takes optional `--nopretty` to minimize the output)
 - `diff`: compare output with existing JSON for a stack
-- `cfn-validate-template`: run validation against the stack definition
-- `cfn-create-stack`: create a new stack from the output
-- `cfn-update-stack`: update an existing stack from the output
+- `validate`: run validation against the stack definition
+- `create`: create a new stack from the output
+- `update`: update an existing stack from the output
 
 Below are the various functions currently available in the DSL. See [the example script](examples/cloudformation-ruby-script.rb) for more usage information.
 
