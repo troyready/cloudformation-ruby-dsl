@@ -74,6 +74,16 @@ def cfn(template)
   cfn_client = aws_cfn.cfn_client
 
   action = ARGV[0]
+  deprecated = {
+    "cfn-validate-template" => "validate",
+    "cfn-create-stack" => "create",
+    "cfn-update-stack" => "update"
+  }
+  if deprecated.keys.include? action
+    replacement = deprecated[action]
+    $stderr.puts "WARNING: '#{action}' is deprecated and will be removed; use '#{replacement}' instead"
+    action = replacement
+  end
   unless %w(expand diff validate create update).include? action
     $stderr.puts "usage: #{$PROGRAM_NAME} <expand|diff|validate|create|update>"
     exit(2)
