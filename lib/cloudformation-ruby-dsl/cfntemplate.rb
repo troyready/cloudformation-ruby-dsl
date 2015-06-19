@@ -35,9 +35,11 @@ class AwsCfn
 
   def cfn_client
     if @cfn_client_instance == nil
-        @cfn_client_instance = Aws::CloudFormation::Client.new(
         # region and credentials are loaded from the environment; see http://docs.aws.amazon.com/sdkforruby/api/Aws/CloudFormation/Client.html
-        validate_params: true
+        @cfn_client_instance = Aws::CloudFormation::Client.new(
+        # we don't validate parameters because the aws-ruby-sdk gets a number parameter and expects it to be a string and fails the validation
+        # see: https://github.com/aws/aws-sdk-ruby/issues/848
+        validate_params: false,
       )
     end
     @cfn_client_instance
@@ -92,10 +94,12 @@ def cfn(template)
   end
 
   # Derive stack name from ARGV
-  _, options = extract_options(ARGV[1..-1], %w(), %w(--stack-name --region --parameters --tag))
-  # If the first argument is not an option, assume it's the stack name
-  if options[0] && !(/^-/ =~ options[0])
-    stack_name = options.shift
+  _, options = extract_options(ARGV[1..-1], %w(--nopretty), %w(--stack-name --region --parameters --tag))
+  # If the first argument is not an option and stack_name is undefined, assume it's the stack name
+  if template.stack_name.nil?
+    stack_name = options.shift if options[0] && !(/^-/ =~ options[0])
+  else
+    stack_name = template.stack_name
   end
 
   case action
@@ -215,7 +219,16 @@ def cfn(template)
   when 'update'
 
     # Run CloudFormation command to describe the existing stack
-    old_stack = cfn_client.describe_stacks({stack_name: stack_name}).stacks[0]
+    old_stack = cfn_client.describe_stacks({stack_name: stack_name}).stacks
+
+    # this might happen if, for example, stack_name is an empty string and the Cfn client returns ALL stacks
+    if old_stack.length > 1
+      $stderr.puts "Error: found too many stacks with this name. There should only be one."
+      exit(false)
+    else
+      # grab the first (and only) result
+      old_stack = old_stack[0]
+    end
 
     # If updating a stack and some parameters are marked as immutable, fail if the new parameters don't match the old ones.
     if not immutable_parameters.empty?
@@ -310,6 +323,5 @@ end
 # Main entry point
 def template(&block)
   stack_name, parameters, aws_region, nopretty = parse_args
-  puts stack_name
   raw_template(parameters, stack_name, aws_region, nopretty, &block)
 end
