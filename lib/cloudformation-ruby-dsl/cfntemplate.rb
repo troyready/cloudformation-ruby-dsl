@@ -27,6 +27,7 @@ require 'yaml'
 require 'erb'
 require 'aws-sdk'
 require 'diffy'
+require 'highline/import'
 
 ############################# AWS SDK Support
 
@@ -35,14 +36,27 @@ class AwsCfn
 
   def cfn_client
     if @cfn_client_instance == nil
-        # region and credentials are loaded from the environment; see http://docs.aws.amazon.com/sdkforruby/api/Aws/CloudFormation/Client.html
+        # credentials are loaded from the environment; see http://docs.aws.amazon.com/sdkforruby/api/Aws/CloudFormation/Client.html
         @cfn_client_instance = Aws::CloudFormation::Client.new(
         # we don't validate parameters because the aws-ruby-sdk gets a number parameter and expects it to be a string and fails the validation
         # see: https://github.com/aws/aws-sdk-ruby/issues/848
-        validate_params: false,
+        validate_params: false
       )
     end
     @cfn_client_instance
+  end
+end
+
+# utility class to deserialize Structs as JSON
+class Struct
+  def to_map
+    map = Hash.new
+    self.members.each { |m| map[m] = self[m] }
+    map
+  end
+
+  def to_json(*a)
+    to_map.to_json(*a)
   end
 end
 
@@ -76,22 +90,26 @@ def validate_action(action)
     validate
     create
     update
+    cancel-update
+    delete
+    describe
+    describe-resource
+    get-template
   ]
   removed = %w[
-    cfn-cancel-update-stack
-    cfn-delete-stack
-    cfn-describe-stack-events
-    cfn-describe-stack-resource
-    cfn-describe-stack-resources
-    cfn-describe-stacks
-    cfn-get-template
     cfn-list-stack-resources
     cfn-list-stacks
   ]
   deprecated = {
-    "cfn-validate-template" => "validate",
-    "cfn-create-stack" => "create",
-    "cfn-update-stack" => "update"
+    "cfn-validate-template"        => "validate",
+    "cfn-create-stack"             => "create",
+    "cfn-update-stack"             => "update",
+    "cfn-cancel-update-stack"      => "cancel-update",
+    "cfn-delete-stack"             => "delete",
+    "cfn-describe-stack-events"    => "describe",
+    "cfn-describe-stack-resources" => "describe",
+    "cfn-describe-stack-resource"  => "describe-resource",
+    "cfn-get-template"             => "get-template"
   }
   if deprecated.keys.include? action
     replacement = deprecated[action]
@@ -131,8 +149,10 @@ def cfn(template)
   # Derive stack name from ARGV
   _, options = extract_options(ARGV[1..-1], %w(--nopretty), %w(--stack-name --region --parameters --tag))
   # If the first argument is not an option and stack_name is undefined, assume it's the stack name
+  # The second argument, if present, is the resource name used by the describe-resource command
   if template.stack_name.nil?
     stack_name = options.shift if options[0] && !(/^-/ =~ options[0])
+    resource_name = options.shift if options[0] && !(/^-/ =~ options[0])
   else
     stack_name = template.stack_name
   end
@@ -226,14 +246,16 @@ def cfn(template)
   when 'validate'
     begin
       valid = cfn_client.validate_template({template_body: template_string})
-      exit(valid.successful?)
+      if valid.successful?
+        puts "Validation successful"
+        exit(true)
+      end
     rescue Aws::CloudFormation::Errors::ValidationError => e
       $stderr.puts "Validation error: #{e}"
       exit(false)
     end
 
   when 'create'
-
     begin
       create_result = cfn_client.create_stack({
           stack_name: stack_name,
@@ -248,6 +270,96 @@ def cfn(template)
       end
     rescue Aws::CloudFormation::Errors::ServiceError => e
       $stderr.puts "Failed to create stack: #{e}"
+      exit(false)
+    end
+
+  when 'cancel-update'
+    begin
+      cancel_update_result = cfn_client.cancel_update_stack({stack_name: stack_name})
+      if cancel_update_result.successful?
+        $stderr.puts "Canceled updating stack #{stack_name}."
+        exit(true)
+      end
+    rescue Aws::CloudFormation::Errors::ServiceError => e
+      $stderr.puts "Failed to cancel updating stack: #{e}"
+      exit(false)
+    end
+
+  when 'delete'
+    begin
+      if HighLine.agree("Really delete #{stack_name} in #{cfn_client.config.region}? [Y/n]")
+        delete_result = cfn_client.delete_stack({stack_name: stack_name})
+        if delete_result.successful?
+          $stderr.puts "Deleted stack #{stack_name}."
+          exit(true)
+        end
+      else
+        $stderr.puts "Canceled deleting stack #{stack_name}."
+        exit(true)
+      end
+      rescue Aws::CloudFormation::Errors::ServiceError => e
+        $stderr.puts "Failed to delete stack: #{e}"
+        exit(false)
+    end
+
+  when 'describe'
+    begin
+      describe_stack = cfn_client.describe_stacks({stack_name: stack_name})
+      describe_stack_resources = cfn_client.describe_stack_resources({stack_name: stack_name})
+      if describe_stack.successful? and describe_stack_resources.successful?
+        stacks = {}
+        stack_resources = {}
+        describe_stack_resources.stack_resources.each { |stack_resource|
+          if stack_resources[stack_resource.stack_name].nil?
+            stack_resources[stack_resource.stack_name] = []
+          end
+          stack_resources[stack_resource.stack_name].push({
+            logical_resource_id: stack_resource.logical_resource_id,
+            physical_resource_id: stack_resource.physical_resource_id,
+            resource_type: stack_resource.resource_type,
+            timestamp: stack_resource.timestamp,
+            resource_status: stack_resource.resource_status,
+            resource_status_reason: stack_resource.resource_status_reason,
+            description: stack_resource.description,
+          })
+        }
+        describe_stack.stacks.each { |stack| stacks[stack.stack_name] = stack.to_map.merge!({resources: stack_resources[stack.stack_name]}) }
+        puts JSON.pretty_generate(stacks)
+        exit(true)
+      end
+    rescue Aws::CloudFormation::Errors::ServiceError => e
+      $stderr.puts "Failed describe stack #{stack_name}: #{e}"
+      exit(false)
+    end
+
+  when 'describe-resource'
+    begin
+      describe_stack_resource = cfn_client.describe_stack_resource({
+        stack_name: stack_name,
+        logical_resource_id: resource_name,
+      })
+      if describe_stack_resource.successful?
+        unless template.nopretty
+          puts JSON.pretty_generate(describe_stack_resource.stack_resource_detail)
+        else
+          puts JSON.generate(describe_stack_resource.stack_resource_detail)
+        end
+        exit(true)
+      end
+    rescue Aws::CloudFormation::Errors::ServiceError => e
+      $stderr.puts "Failed get stack resource details: #{e}"
+      exit(false)
+    end
+
+  when 'get-template'
+    begin
+      get_template_result = cfn_client.get_template({stack_name: stack_name})
+      if get_template_result.successful?
+        puts get_template_result.template_body
+        exit(true)
+      end
+    rescue Aws::CloudFormation::Errors::ServiceError => e
+      $stderr.puts "Failed get stack template: #{e}"
       exit(false)
     end
 

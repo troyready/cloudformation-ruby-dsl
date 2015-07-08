@@ -37,4 +37,5 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency    'bundler'
   gem.add_runtime_dependency    'aws-sdk'
   gem.add_runtime_dependency    'diffy'
+  gem.add_runtime_dependency    'highline'
 end
