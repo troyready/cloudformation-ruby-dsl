@@ -262,13 +262,22 @@ def cfn(template)
 
   when 'create'
     begin
-      create_result = cfn_client.create_stack({
+
+      # default options (not overridable)
+      create_stack_opts = {
           stack_name: stack_name,
           template_body: template_string,
           parameters: template.parameters.map { |k,v| {parameter_key: k, parameter_value: v}}.to_a,
           tags: cfn_tags.map { |k,v| {"key" => k.to_s, "value" => v} }.to_a,
           capabilities: ["CAPABILITY_IAM"],
-        })
+      }
+
+      # fill in options from the command line
+      extra_options = parse_arg_array_as_hash(options)
+      create_stack_opts = extra_options.merge(create_stack_opts)
+
+      # create stack
+      create_result = cfn_client.create_stack(create_stack_opts)
       if create_result.successful?
         puts create_result.stack_id
         exit(true)
@@ -410,12 +419,21 @@ def cfn(template)
 
     # update the stack
     begin
-      update_result = cfn_client.update_stack({
+
+      # default options (not overridable)
+      update_stack_opts = {
           stack_name: stack_name,
           template_body: template_string,
           parameters: template.parameters.map { |k,v| {parameter_key: k, parameter_value: v}}.to_a,
           capabilities: ["CAPABILITY_IAM"],
-        })
+      }
+
+      # fill in options from the command line
+      extra_options = parse_arg_array_as_hash(options)
+      update_stack_opts = extra_options.merge(update_stack_opts)
+
+      # update the stack
+      update_result = cfn_client.update_stack(update_stack_opts)
       if update_result.successful?
         puts update_result.stack_id
         exit(true)
@@ -462,6 +480,20 @@ def extract_options(args, opts_no_val, opts_1_val)
     end
   end
   [opts, rest]
+end
+
+# convert an array of option strings to a hash
+# example input: ["--option", "value", "--optionwithnovalue"]
+# example output: {:option => "value", :optionwithnovalue: true}
+def parse_arg_array_as_hash(options)
+  result = {}
+  options.slice_before(/\A--[a-zA-Z_-]\S/).each { |o|
+      key = ((o[0].sub '--', '').gsub '-', '_').downcase.to_sym
+      value = if o.length > 1 then o.drop(1) else true end
+      value = value[0] if value.is_a?(Array) and value.length == 1
+      result[key] = value
+  }
+  result
 end
 
 ##################################### Additional dsl logic
