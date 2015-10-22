@@ -38,10 +38,15 @@ You may need to preface this with `bundle exec` if you installed via Bundler.
 
 Make the resulting file executable (`chmod +x [NEW_NAME.rb]`). It can respond to the following subcommands (which are listed if you run without parameters):
 - `expand`: output the JSON template to the command line (takes optional `--nopretty` to minimize the output)
-- `diff`: compare output with existing JSON for a stack
+- `diff`: compare an existing stack with your template
 - `validate`: run validation against the stack definition
 - `create`: create a new stack from the output
 - `update`: update an existing stack from the output
+- `cancel-update`: cancel updating a stack
+- `delete`: delete a stack (with prompt)
+- `describe`: get output of an existing stack and output it (takes optional `--nopretty` to minimize output)
+- `describe-resource`: given two arguments: stack-name and logical-resource-id, get output from a stack concerning the specific resource (takes optional `--nopretty` to minimize output)
+- `get-template`: get entire template output of an existing stack
 
 Below are the various functions currently available in the DSL. See [the example script](examples/cloudformation-ruby-script.rb) for more usage information.
 

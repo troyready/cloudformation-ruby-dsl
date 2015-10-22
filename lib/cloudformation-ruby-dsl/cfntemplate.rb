@@ -338,7 +338,11 @@ def cfn(template)
           })
         }
         describe_stack.stacks.each { |stack| stacks[stack.stack_name] = stack.to_map.merge!({resources: stack_resources[stack.stack_name]}) }
-        puts JSON.pretty_generate(stacks)
+        unless template.nopretty
+          puts JSON.pretty_generate(stacks)
+        else
+          puts JSON.generate(stacks)
+        end
         exit(true)
       end
     rescue Aws::CloudFormation::Errors::ServiceError => e
@@ -368,8 +372,13 @@ def cfn(template)
   when 'get-template'
     begin
       get_template_result = cfn_client.get_template({stack_name: stack_name})
+      template_body = JSON.parse(get_template_result.template_body)
       if get_template_result.successful?
-        puts get_template_result.template_body
+        unless template.nopretty
+          puts JSON.pretty_generate(template_body)
+        else
+          puts JSON.generate(template_body)
+        end
         exit(true)
       end
     rescue Aws::CloudFormation::Errors::ServiceError => e
