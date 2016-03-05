@@ -111,17 +111,29 @@ template do
 
 
   # The tag type is a DSL extension; it is not a property of actual CloudFormation templates.
-  #   These tags are excised from the template and used to generate a series of --tag arguments which are passed to CloudFormation when a stack is created.
+  #   These tags are excised from the template and used to generate a series of --tag arguments
+  #   which are passed to CloudFormation when a stack is created.
   #   They do not ultimately appear in the expanded CloudFormation template.
-  #   The diff subcommand will compare tags with the running stack and identify any changes, but a stack update will do the diff and throw an error on any
-  #   changes. The tags are propagated to all resources created by the stack, including the stack itself.
+  #   The diff subcommand will compare tags with the running stack and identify any changes, 
+  #   but a stack update will do the diff and throw an error on any immutable tags update attempt.
+  #   The tags are propagated to all resources created by the stack, including the stack itself.
+  #   If a resource has its own tag with the same name as CF's it's not overwritten.
   #
   # Amazon has set the following restrictions on CloudFormation tags:
   #   => limit 10
-  #   => immutable (you may not update a stack with new tags or different values for existing tags -- they will be rejected)
-  #
-  tag :MyTag => 'MyValue'
-  tag :MyOtherTag => 'My Value With Spaces'
+  # CloudFormation tags declaration examples:
+
+  tag 'My:New:Tag',
+      :Value => 'ImmutableTagValue',
+      :Immutable => true
+
+  tag :MyOtherTag,
+      :Value => 'My Value With Spaces'
+
+  tag(:"tag:name", :Value => 'tag_value', :Immutable => true)
+
+  # Following format is deprecated and not advised. Please declare CloudFormation tags as described above.
+  tag :TagName => 'tag_value'    # It's immutable.
 
   resource 'SecurityGroup', :Type => 'AWS::EC2::SecurityGroup', :Properties => {
       :GroupDescription => 'Lets any vpc traffic in.',

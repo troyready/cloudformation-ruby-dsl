@@ -145,6 +145,12 @@ def cfn(template)
   # Remove them from the template as well, so that the template is valid.
   cfn_tags = template.excise_tags!
 
+  # Find tags where extension attribute `:Immutable` is true then remove it from the
+  # tag's properties hash since it can't be passed to CloudFormation.
+  immutable_tags = template.get_tag_attribute(cfn_tags, :Immutable)
+
+  cfn_tags.each {|k, v| cfn_tags[k] = v[:Value].to_s}
+
   if action == 'diff' or (action == 'expand' and not template.nopretty)
     template_string = JSON.pretty_generate(template)
   else
@@ -407,30 +413,56 @@ def cfn(template)
       old_stack = old_stack[0]
     end
 
-    # If updating a stack and some parameters are marked as immutable, fail if the new parameters don't match the old ones.
+    # If updating a stack and some parameters or tags are marked as immutable, set the variable to true.
+    immutables_exist = nil 
+
     if not immutable_parameters.empty?
       old_parameters = Hash[old_stack.parameters.map { |p| [p.parameter_key, p.parameter_value]}]
       new_parameters = template.parameters
-
       immutable_parameters.sort.each do |param|
-        if old_parameters[param].to_s != new_parameters[param].to_s
+        if old_parameters[param].to_s != new_parameters[param].to_s && old_parameters.key?(param)
           $stderr.puts "Error: unable to update immutable parameter " +
                            "'#{param}=#{old_parameters[param]}' to '#{param}=#{new_parameters[param]}'."
-          exit(false)
+          immutables_exist = true
         end
       end
     end
 
-    # Tags are immutable in CloudFormation.  Validate against the existing stack to ensure tags haven't changed.
-    # Compare the sorted arrays for an exact match
-    old_cfn_tags = old_stack.tags.map { |p| [p.key.to_sym, p.value]}.sort
-    cfn_tags_ary = cfn_tags.to_a.sort
-    if cfn_tags_ary != old_cfn_tags
-      $stderr.puts "CloudFormation stack tags do not match and cannot be updated. You must either use the same tags or create a new stack." +
-                      "\n" + (old_cfn_tags - cfn_tags_ary).map {|tag| "< #{tag}" }.join("\n") +
-                      "\n" + "---" +
-                      "\n" + (cfn_tags_ary - old_cfn_tags).map {|tag| "> #{tag}"}.join("\n")
+    if not immutable_tags.empty?
+      old_cfn_tags = Hash[old_stack.tags.map { |t| [t.key, t.value]}]
+      cfn_tags_ary = Hash[cfn_tags.map { |k,v| [k, v]}]
+      immutable_tags.sort.each do |tag|
+        if old_cfn_tags[tag].to_s != cfn_tags_ary[tag].to_s && old_cfn_tags.key?(tag)
+          $stderr.puts "Error: unable to update immutable tag " +
+                           "'#{tag}=#{old_cfn_tags[tag]}' to '#{tag}=#{cfn_tags_ary[tag]}'."
+          immutables_exist = true
+        end
+      end
+    end
+
+    # Fail if some parameters or tags were marked as immutable.
+    if immutables_exist
       exit(false)
+    end
+
+    # Compare the sorted arrays of parameters for an exact match and print difference.
+    old_parameters = old_stack.parameters.map { |p| [p.parameter_key, p.parameter_value]}.sort
+    new_parameters = template.parameters.sort
+    if new_parameters != old_parameters
+      puts "\nCloudFormation stack parameters that do not match and will be updated:" +
+               "\n" + (old_parameters - new_parameters).map {|param| "< #{param}" }.join("\n") +
+               "\n" + "---" +
+               "\n" + (new_parameters - old_parameters).map {|param| "> #{param}"}.join("\n")
+    end
+
+    # Compare the sorted arrays of tags for an exact match and print difference.
+    old_cfn_tags = old_stack.tags.map { |t| [t.key, t.value]}.sort
+    cfn_tags_ary = cfn_tags.map { |k,v| [k, v]}.sort
+    if cfn_tags_ary != old_cfn_tags
+      puts "\nCloudFormation stack tags that do not match and will be updated:" +
+               "\n" + (old_cfn_tags - cfn_tags_ary).map {|tag| "< #{tag}" }.join("\n") +
+               "\n" + "---" +
+               "\n" + (cfn_tags_ary - old_cfn_tags).map {|tag| "> #{tag}"}.join("\n")
     end
 
     # update the stack
@@ -441,6 +473,7 @@ def cfn(template)
           stack_name: stack_name,
           template_body: template_string,
           parameters: template.parameters.map { |k,v| {parameter_key: k, parameter_value: v}}.to_a,
+          tags: cfn_tags.map { |k,v| {"key" => k.to_s, "value" => v.to_s} }.to_a,
           capabilities: ["CAPABILITY_IAM"],
       }
 
@@ -467,7 +500,7 @@ end
 # Example:
 #
 # desired, unknown = extract_options("arg1 --option withvalue --optionwithoutvalue", %w(--option), %w())
-# 
+#
 # puts desired => Array{"arg1", "--option", "withvalue"}
 # puts unknown => Array{}
 #

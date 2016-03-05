@@ -110,15 +110,36 @@ class TemplateDSL < JsonObjectDSL
     contents
   end
 
+  # Find tags where the specified attribute is true then remove this attribute.
+  def get_tag_attribute(tags, attribute)
+    marked_tags = []
+    tags.each do |tag, options|
+      if options.delete(attribute.to_sym) or options.delete(attribute.to_s)
+        marked_tags << tag
+      end
+    end
+    marked_tags
+  end
+
   def excise_tags!
     tags = @dict.fetch(:Tags, {})
     @dict.delete(:Tags)
     tags
   end
 
-  def tag(tag)
-    tag.each do | name, value |
-      default(:Tags, {})[name] = value
+  def tag(tag, *args)
+    if (tag.is_a?(String) || tag.is_a?(Symbol)) && !args.empty?
+      default(:Tags, {})[tag.to_s] = args[0]
+    # For backward-compatibility, transform `tag_name=>value` format to `tag_name, :Value=>value, :Immutable=>true`
+    # Tags declared this way remain immutable and won't be updated.
+    elsif tag.is_a?(Hash) && tag.size == 1 && args.empty?
+      $stderr.puts "WARNING: #{tag} tag declaration format is deprecated and will be removed in a future version. Please use resource-like style instead."
+      tag.each do |name, value|
+        default(:Tags, {})[name.to_s] = {:Value => value, :Immutable => true}
+      end
+    else
+      $stderr.puts "Error: #{tag} tag validation error. Please verify tag's declaration format."
+      exit(false)
     end
   end
 
