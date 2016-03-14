@@ -177,7 +177,10 @@ def cfn(template)
     # example: <template.rb> diff my-stack-name --parameters "Env=prod" --region eu-west-1
     # Diff the current template for an existing stack with the expansion of this template.
 
-    # We default to "output nothing if no differences are found" to make it easy to use the output of the diff call from within other scripts
+    # `diff` operation exit codes are:
+      # 0 - no differences are found. Outputs nothing to make it easy to use the output of the diff call from within other scripts.
+      # 1 - produced by any ValidationError exception (e.g. "Stack with id does not exist")
+      # 2 - there are changes to update (tags, params, template)
     # If you want output of the entire file, simply use this option with a large number, i.e., -U 10000
     # In fact, this is what Diffy does by default; we just don't want that, and we can't support passing arbitrary options to diff
     # because Diffy's "context" configuration is mutually exclusive with the configuration to pass arbitrary options to diff
@@ -246,7 +249,11 @@ def cfn(template)
       puts
     end
 
-    exit(true)
+    if tags_diff.empty? && params_diff.empty? && template_diff.empty?
+      exit(true)
+    else
+      exit(2)
+    end
 
   when 'validate'
     begin

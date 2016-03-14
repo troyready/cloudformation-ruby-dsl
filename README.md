@@ -38,10 +38,19 @@ You may need to preface this with `bundle exec` if you installed via Bundler.
 
 Make the resulting file executable (`chmod +x [NEW_NAME.rb]`). It can respond to the following subcommands (which are listed if you run without parameters):
 - `expand`: output the JSON template to the command line (takes optional `--nopretty` to minimize the output)
-- `diff`: compare an existing stack with your template
+- `diff`: compare an existing stack with your template. Produces following exit codes:
+```
+    0 - no differences, nothing to update
+    1 - stack does not exist, template Validation error
+    2 - there are differences between an existing stack and your template
+```
 - `validate`: run validation against the stack definition
 - `create`: create a new stack from the output
-- `update`: update an existing stack from the output
+- `update`: update an existing stack from the output. Produces following exit codes:
+```
+    0 - update finished successfully
+    1 - no updates to perform, stack doesn't exist, unable to update immutable parameter or tag, AWS ServiceError exception
+```
 - `cancel-update`: cancel updating a stack
 - `delete`: delete a stack (with prompt)
 - `describe`: get output of an existing stack and output it (takes optional `--nopretty` to minimize output)
