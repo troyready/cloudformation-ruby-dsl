@@ -3,7 +3,7 @@
 ## Performing releases
 
 0. Merge the desired commits to master. But merge them cleanly! See: [merging](#merging)
-1. Edit and commit the version file in `lib/cloudformation-ruby-dsl/version.rb`. Bump the version based on the [version specification](#versioning-specification)
+1. Edit and commit the version file in `lib/cloudformation-ruby-dsl-addedvars/version.rb`. Bump the version based on the [version specification](#versioning-specification)
 2. `git push` to origin/master
 3. `rake release`
 

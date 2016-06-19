@@ -15,10 +15,10 @@
 # limitations under the License.
 
 require 'bundler/setup'
-require 'cloudformation-ruby-dsl/cfntemplate'
-require 'cloudformation-ruby-dsl/table'
+require 'cloudformation-ruby-dsl-addedvars/cfntemplate'
+require 'cloudformation-ruby-dsl-addedvars/table'
 
-# Note: this is only intended to demonstrate the cloudformation-ruby-dsl. It compiles
+# Note: this is only intended to demonstrate the cloudformation-ruby-dsl-addedvars. It compiles
 #   and validates correctly, but won't produce a viable CloudFormation stack.
 
 template do
@@ -114,7 +114,7 @@ template do
   #   These tags are excised from the template and used to generate a series of --tag arguments
   #   which are passed to CloudFormation when a stack is created.
   #   They do not ultimately appear in the expanded CloudFormation template.
-  #   The diff subcommand will compare tags with the running stack and identify any changes, 
+  #   The diff subcommand will compare tags with the running stack and identify any changes,
   #   but a stack update will do the diff and throw an error on any immutable tags update attempt.
   #   The tags are propagated to all resources created by the stack, including the stack itself.
   #   If a resource has its own tag with the same name as CF's it's not overwritten.

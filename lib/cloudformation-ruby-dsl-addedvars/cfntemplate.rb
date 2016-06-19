@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'cloudformation-ruby-dsl/dsl'
+require 'cloudformation-ruby-dsl-addedvars/dsl'
 
 unless RUBY_VERSION >= '1.9'
   # This script uses Ruby 1.9 functions such as Enumerable.slice_before and Enumerable.chunk
@@ -127,7 +127,7 @@ def validate_action(action)
   end
   unless valid.include? action
     if removed.include? action
-      $stderr.puts "ERROR: native command #{action} is no longer supported by cloudformation-ruby-dsl."
+      $stderr.puts "ERROR: native command #{action} is no longer supported by cloudformation-ruby-dsl-addedvars."
     end
     $stderr.puts "usage: #{$PROGRAM_NAME} <#{valid.join('|')}>"
     exit(2)

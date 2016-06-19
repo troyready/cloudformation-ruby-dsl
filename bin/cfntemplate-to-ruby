@@ -105,9 +105,9 @@ def pprint_cfn_template(tpl)
   puts "#!/usr/bin/env ruby"
   puts
   puts "require 'bundler/setup'"
-  puts "require 'cloudformation-ruby-dsl/cfntemplate'"
-  puts "require 'cloudformation-ruby-dsl/spotprice'"
-  puts "require 'cloudformation-ruby-dsl/table'"
+  puts "require 'cloudformation-ruby-dsl-addedvars/cfntemplate'"
+  puts "require 'cloudformation-ruby-dsl-addedvars/spotprice'"
+  puts "require 'cloudformation-ruby-dsl-addedvars/table'"
   puts
   puts "template do"
   puts

@@ -1,4 +1,11 @@
-# cloudformation-ruby-dsl
+# cloudformation-ruby-dsl-addedvars
+
+__TEMPORARY FORK__
+
+This gem contains changes not yet suitable for the upstream project. This fork will be retired once a proper implementation of the changes is merged upstream. Discussion likely to continue [here](https://github.com/bazaarvoice/cloudformation-ruby-dsl/issues/77) and/or [here](https://github.com/bazaarvoice/cloudformation-ruby-dsl/pull/87).
+
+__END TEMPORARY FORK NOTICE__
+
 
 A Ruby DSL and helper utilities for building CloudFormation templates dynamically.
 
@@ -16,9 +23,9 @@ Additionally, CloudFormation templates are just massive JSON documents, making g
 
 ## Installation
 
-Run `gem install cloudformation-ruby-dsl` to install system-wide.
+Run `gem install cloudformation-ruby-dsl-addedvars` to install system-wide.
 
-To use in a specific project, add `gem 'cloudformation-ruby-dsl'` to your Gemfile, and then run `bundle`.
+To use in a specific project, add `gem 'cloudformation-ruby-dsl-addedvars'` to your Gemfile, and then run `bundle`.
 
 ## Releasing
 
