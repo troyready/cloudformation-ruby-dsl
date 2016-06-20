@@ -81,14 +81,23 @@ def parse_args
       stack_name = value
     when '--parameters'
       parameters = Hash[value.split(/;/).map { |pair| pair.split(/=/, 2) }]  #/# fix for syntax highlighting
+      parameters = $stack_params.merge(parameters) if $stack_params
     when '--region'
       region = value
+      # Because of the use of global variables here and below, here we
+      # must ensure the command-line set version isn't overridden
+      $aws_region = nil
     when '--profile'
       profile = value
     when '--nopretty'
       nopretty = true
     end
   end
+  # Allow these same settings to be set without using the command-line flags
+  stack_name ||= $stack_name
+  parameters = $stack_params if parameters == {} && $stack_params
+  profile    ||= $aws_profile
+  region     = $aws_region unless $aws_region == nil
   [stack_name, parameters, region, profile, nopretty]
 end
 
@@ -139,7 +148,8 @@ def cfn(template)
   aws_cfn = AwsCfn.new({:region => template.aws_region, :aws_profile => template.aws_profile})
   cfn_client = aws_cfn.cfn_client
 
-  action = validate_action( ARGV[0] )
+  # Validate the stack action, whether setup via command line or global options
+  action = validate_action( ARGV[0].class == String ? ARGV[0] : $cf_action )
 
   # Find parameters where extension attribute :Immutable is true then remove it from the
   # cfn template since we can't pass it to CloudFormation.
@@ -519,17 +529,19 @@ end
 #   The first array contains all the options that were extracted (both those with and without values) as a flattened enumerable.
 #   The second array contains all the options that were not extracted.
 def extract_options(args, opts_no_val, opts_1_val)
-  args = args.clone
   opts = []
   rest = []
-  while (arg = args.shift) != nil
-    if opts_no_val.include?(arg)
-      opts.push(arg)
-    elsif opts_1_val.include?(arg)
-      opts.push(arg)
-      opts.push(arg) if (arg = args.shift) != nil
-    else
-      rest.push(arg)
+  unless args == nil
+    args = args.clone
+    while (arg = args.shift) != nil
+      if opts_no_val.include?(arg)
+        opts.push(arg)
+      elsif opts_1_val.include?(arg)
+        opts.push(arg)
+        opts.push(arg) if (arg = args.shift) != nil
+      else
+        rest.push(arg)
+      end
     end
   end
   [opts, rest]

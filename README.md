@@ -114,3 +114,11 @@ Additional capabilities for file inclusion, etc.
 ### Default Region
 
 The tool defaults to region `us-east-1`. To change this set either `EC2_REGION` or `AWS_DEFAULT_REGION` in your environment.
+
+### Storing Command Line Options
+
+The following (optional) variables can be set in your CloudFormation .rb file (before the template) to avoid needing to set them on the command-line:
+- `$aws_profile`: A string setting the `~/.aws/credentials` profile to use
+- `$aws_region`: A string setting the AWS region
+- `$stack_name`: A string containing the stack name
+- `$stack_params`: A hash containing parameter values, e.g. `{'EnvironmentName' => 'prod'}`
