@@ -70,6 +70,7 @@ Below are the various functions currently available in the DSL. See [the example
 
 Add the named object to the appropriate collection.
 - `parameter(name, options)` (may be marked :Immutable, which will raise error on a later change)
+  - The special option key :UsePreviousValue can be set to preserve the parameter's existing value during stack updates (e.g. database passwords that won't be saved in revision control).
 - `mapping(name, options)`
 - `condition(name, conditions)`
 - `resource(name, options)`
