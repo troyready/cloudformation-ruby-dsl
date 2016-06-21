@@ -145,6 +145,10 @@ def cfn(template)
   # cfn template since we can't pass it to CloudFormation.
   immutable_parameters = template.excise_parameter_attribute!(:Immutable)
 
+  # Find parameters where extension attribute :UsePreviousValue is true then
+  # remove it from the cfn template since it's sent as a special option.
+  use_prev_val_params = template.excise_parameter_attribute!(:UsePreviousValue)
+
   # Tag CloudFormation stacks based on :Tags defined in the template.
   # Remove them from the template as well, so that the template is valid.
   cfn_tags = template.excise_tags!
@@ -223,9 +227,17 @@ def cfn(template)
     old_tags_string = old_tags.map { |tag| %Q(TAG "#{tag.key}=#{tag.value}"\n) }.sort.join
     tags_string     = cfn_tags.map { |k, v| %Q(TAG "#{k.to_s}=#{v}"\n) }.sort.join
 
+    # For any parameters to to UsePreviousValue, ensure here that they don't
+    # show up on the diff report by setting their template value to match the
+    # current stack value
+    template_diff_params = template.parameters
+    use_prev_val_params.each do |p|
+      template_diff_params[p] = (old_parameters.find {|i| i.parameter_key == p}).parameter_value
+    end if !use_prev_val_params.nil?
+
     # Sort the parameter strings alphabetically to make them easily comparable
     old_parameters_string = old_parameters.sort! {|pCurrent, pNext| pCurrent.parameter_key <=> pNext.parameter_key }.map { |param| %Q(PARAMETER "#{param.parameter_key}=#{param.parameter_value}"\n) }.join
-    parameters_string     = template.parameters.sort.map { |key, value| "PARAMETER \"#{key}=#{value}\"\n" }.join
+    parameters_string     = template_diff_params.sort.map { |key, value| "PARAMETER \"#{key}=#{value}\"\n" }.join
 
     # set default diff options
     Diffy::Diff.default_options.merge!(
@@ -480,6 +492,13 @@ def cfn(template)
           tags: cfn_tags.map { |k,v| {"key" => k.to_s, "value" => v.to_s} }.to_a,
           capabilities: ["CAPABILITY_IAM"],
       }
+
+      # For any parameter previously set to UsePreviousValue, set that option
+      use_prev_val_params.each do |p|
+        index = update_stack_opts[:parameters].index (update_stack_opts[:parameters].find {|k| k[:parameter_key] == p})
+        update_stack_opts[:parameters][index][:use_previous_value] = true
+        update_stack_opts[:parameters][index].delete :parameter_value
+      end if !use_prev_val_params.nil?
 
       # fill in options from the command line
       extra_options = parse_arg_array_as_hash(options)
